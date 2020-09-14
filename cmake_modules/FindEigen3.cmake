@@ -35,6 +35,11 @@ if(NOT Eigen3_FIND_VERSION)
   set(Eigen3_FIND_VERSION "${Eigen3_FIND_VERSION_MAJOR}.${Eigen3_FIND_VERSION_MINOR}.${Eigen3_FIND_VERSION_PATCH}")
 endif(NOT Eigen3_FIND_VERSION)
 
+set(Eigen3_DIR "C:/Program Files (x86)/Ceres/include/eigen3")
+MESSAGE("+++++++++++++" ${Eigen3_DIR})
+set(EIGEN3_INCLUDE_DIR "C:/Program Files (x86)/Ceres/include/eigen3")
+MESSAGE("+++++++++++++" ${EIGEN3_INCLUDE_DIR})
+
 macro(_eigen3_check_version)
   file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h" _eigen3_version_header)
 
