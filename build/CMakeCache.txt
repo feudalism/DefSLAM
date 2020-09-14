@@ -151,10 +151,10 @@ CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO:STRING=/debug /INCREMENTAL
 
 //If set, runtime paths are not added when installing shared libraries,
 // but are added when building.
-CMAKE_SKIP_INSTALL_RPATH:BOOL=OFF
+CMAKE_SKIP_INSTALL_RPATH:BOOL=NO
 
 //If set, runtime paths are not added when using shared libraries.
-CMAKE_SKIP_RPATH:BOOL=OFF
+CMAKE_SKIP_RPATH:BOOL=NO
 
 //Flags used by the linker during the creation of static libraries
 // during all build types.
@@ -180,7 +180,16 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 // .SILENT directive, and all commands will be echoed to the console
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
-CMAKE_VERBOSE_MAKEFILE:BOOL=OFF
+CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
+
+//The directory containing a CMake configuration file for Ceres.
+Ceres_DIR:PATH=C:/Program Files (x86)/Ceres/CMake
+
+//Value Computed by CMake
+DBoW2_BINARY_DIR:STATIC=C:/slam/DefSLAM/build/Thirdparty/DBoW2
+
+//Value Computed by CMake
+DBoW2_SOURCE_DIR:STATIC=C:/slam/DefSLAM/Thirdparty/DBoW2
 
 //Value Computed by CMake
 DeformableSLAM_BINARY_DIR:STATIC=C:/slam/DefSLAM/build
@@ -188,8 +197,20 @@ DeformableSLAM_BINARY_DIR:STATIC=C:/slam/DefSLAM/build
 //Value Computed by CMake
 DeformableSLAM_SOURCE_DIR:STATIC=C:/slam/DefSLAM
 
+//The directory containing a CMake configuration file for Eigen3.
+Eigen3_DIR:PATH=C:/Users/admin/Downloads/git/eigen/build
+
 //The directory containing a CMake configuration file for OpenCV.
-OpenCV_DIR:PATH=OpenCV_DIR-NOTFOUND
+OpenCV_DIR:PATH=C:/Users/admin/Downloads/opencv/build/install
+
+//The directory containing a CMake configuration file for Pangolin.
+Pangolin_DIR:PATH=C:/Users/admin/Downloads/git/Pangolin/source/build/src
+
+//The directory containing a CMake configuration file for gflags.
+gflags_DIR:PATH=C:/Program Files (x86)/gflags/lib/cmake/gflags
+
+//The directory containing a CMake configuration file for glog.
+glog_DIR:PATH=C:/Users/admin/Downloads/git/glog/build
 
 
 ########################
@@ -256,6 +277,8 @@ CMAKE_GENERATOR_INSTANCE:INTERNAL=C:/Program Files (x86)/Microsoft Visual Studio
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Have include pthread.h
+CMAKE_HAVE_PTHREAD_H:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=C:/slam/DefSLAM
@@ -274,7 +297,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=2
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_RC_COMPILER
@@ -324,4 +347,8 @@ COMPILER_SUPPORTS_CXX0X:INTERNAL=
 COMPILER_SUPPORTS_CXX14:INTERNAL=
 //Test COMPILER_SUPPORTS_CXX17
 COMPILER_SUPPORTS_CXX17:INTERNAL=
+//Details about finding OpenCV
+FIND_PACKAGE_MESSAGE_DETAILS_OpenCV:INTERNAL=[C:/Users/admin/Downloads/opencv/build/install][v4.4.0(4.0.0)]
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 

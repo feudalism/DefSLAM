@@ -27,8 +27,9 @@ add_definitions(-DCOMPILEDWITHC17)
 # endif() 
  
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+#LIST(APPEND CMAKE_PREFIX_PATH "C:/Users/admin/Downloads/opencv/build/install")
  
-find_package(OpenCV 4.0.0 REQUIRED)
+find_package(OpenCV 4.0.0 REQUIRED PATHS "C:/Users/admin/Downloads/opencv/build/install")
 find_package(Pangolin REQUIRED)
 FIND_PACKAGE(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
