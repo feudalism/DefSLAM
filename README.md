@@ -12,11 +12,11 @@ DefSLAM is a real-time deformable SLAM library for **Monocular** cameras that co
 * [Ceres](http://ceres-solver.org) to optimize warp and to run the NRSfM.
 * [PCL](https://pointclouds.org/downloads/) mainly for groundtruths.
 
-## DBoW2 and g2o and ORBSLAM(Included in Thirdparty folder)
+## DBoW2 and g2o and ORBSLAM (included in Thirdparty folder)
 * Modified [DBoW2](https://github.com/dorian3d/DBoW2) library to perform place recognition
 * Modified [g2o](https://github.com/RainerKuemmerle/g2o) library to perform non-linear optimizations.
-
-Both modified libraries (which are BSD) are included in the *Thirdparty* folder. Likewise we include a modified version of ORBSLAM. BOW is only used for ORBSLAM_2.
+* Modified version of ORBSLAM.
+* Modified BBS is only used for ORBSLAM_2.
 
 # 5. Datasets
 ## Mandala dataset
