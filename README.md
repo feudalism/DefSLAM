@@ -6,23 +6,17 @@ DefSLAM is a real-time deformable SLAM library for **Monocular** cameras that co
 
 # 2. Prerequisites
 
-## Pangolin
-We use [Pangolin](https://github.com/stevenlovegrove/Pangolin) for visualization and user interface.
-
-## OpenCV
-We use [OpenCV](http://opencv.org) to manipulate images and features. **Required 4.0.0**.
-
-## Eigen3
-Required by g2o (see below). Download and install instructions can be found at: http://eigen.tuxfamily.org. **Required at least 3.1.0**.
-
-# Ceres library:
-We use [Ceres](http://ceres-solver.org) to optimize warp and to run the NRSfM.
-
-## PCL
-[PCL](https://pointclouds.org/downloads/) mainly for groundtruths.
+* [Pangolin](https://github.com/stevenlovegrove/Pangolin) for visualization and user interface.
+* [OpenCV](http://opencv.org) to manipulate images and features. **Required 4.0.0**.
+* [Eigen](http://eigen.tuxfamily.org) **Required at least 3.1.0**.
+* [Ceres](http://ceres-solver.org) to optimize warp and to run the NRSfM.
+* [PCL](https://pointclouds.org/downloads/) mainly for groundtruths.
 
 ## DBoW2 and g2o and ORBSLAM(Included in Thirdparty folder)
-We use modified versions of the [DBoW2](https://github.com/dorian3d/DBoW2) library to perform place recognition and [g2o](https://github.com/RainerKuemmerle/g2o) library to perform non-linear optimizations. Both modified libraries (which are BSD) are included in the *Thirdparty* folder. Likewise we include a modified version of ORBSLAM. BOW is only used for ORBSLAM_2.
+* Modified [DBoW2](https://github.com/dorian3d/DBoW2) library to perform place recognition
+* Modified [g2o](https://github.com/RainerKuemmerle/g2o) library to perform non-linear optimizations.
+
+Both modified libraries (which are BSD) are included in the *Thirdparty* folder. Likewise we include a modified version of ORBSLAM. BOW is only used for ORBSLAM_2.
 
 # 5. Datasets
 ## Mandala dataset
