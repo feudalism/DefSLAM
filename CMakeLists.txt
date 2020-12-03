@@ -37,22 +37,14 @@ include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_2/include/
 ${PROJECT_SOURCE_DIR}/Thirdparty/BBS
-# ${PROJECT_SOURCE_DIR}/Modules/Common
-# ${PROJECT_SOURCE_DIR}/Modules/GroundTruth
-# ${PROJECT_SOURCE_DIR}/Modules/Mapping
-# ${PROJECT_SOURCE_DIR}/Modules/Matching
-# ${PROJECT_SOURCE_DIR}/Modules/Settings
-# ${PROJECT_SOURCE_DIR}/Modules/Template
-# ${PROJECT_SOURCE_DIR}/Modules/Tracking
-# ${PROJECT_SOURCE_DIR}/Modules/Viewer
-${DEBUG_FOLDER}/Modules/Common
-${DEBUG_FOLDER}/Modules/GroundTruth
-${DEBUG_FOLDER}/Modules/Mapping
-${DEBUG_FOLDER}/Modules/Matching
-${DEBUG_FOLDER}/Modules/Settings
-${DEBUG_FOLDER}/Modules/Template
-${DEBUG_FOLDER}/Modules/Tracking
-${DEBUG_FOLDER}/Modules/Viewer
+${PROJECT_SOURCE_DIR}/Modules/Common
+${PROJECT_SOURCE_DIR}/Modules/GroundTruth
+${PROJECT_SOURCE_DIR}/Modules/Mapping
+${PROJECT_SOURCE_DIR}/Modules/Matching
+${PROJECT_SOURCE_DIR}/Modules/Settings
+${PROJECT_SOURCE_DIR}/Modules/Template
+${PROJECT_SOURCE_DIR}/Modules/Tracking
+${PROJECT_SOURCE_DIR}/Modules/Viewer
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CERES_INCLUDE_DIRS}
@@ -61,13 +53,13 @@ ${CERES_INCLUDE_DIRS}
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 FILE(GLOB SRC_DEFSLAM_FILES
-     "${DEBUG_FOLDER}/Modules/Common/*.cc"
-     "${DEBUG_FOLDER}/Modules/GroundTruth/*.cc"
-     "${DEBUG_FOLDER}/Modules/Mapping/*.cc"
-     "${DEBUG_FOLDER}/Modules/Matching/*.cc"
-     "${DEBUG_FOLDER}/Modules/Template/*.cc"
-     "${DEBUG_FOLDER}/Modules/Tracking/*.cc"
-     "${DEBUG_FOLDER}/Modules/Viewer/*.cc")
+     "Modules/Common/*.cc"
+     "Modules/GroundTruth/*.cc"
+     "Modules/Mapping/*.cc"
+     "Modules/Matching/*.cc"
+     "Modules/Template/*.cc"
+     "Modules/Tracking/*.cc"
+     "Modules/Viewer/*.cc")
 
 add_library(${PROJECT_NAME} SHARED
 ${SRC_DEFSLAM_FILES}
@@ -94,8 +86,7 @@ ToolsPCL
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Apps)
 
 ## Just receive image from a camera or a video and process them.
-# add_executable(DefSLAM Apps/simple_camera.cc) 
-add_executable(DefSLAM /home/user3/git/sa-code/slam/DefSLAM/simple_camera.cc) 
+add_executable(DefSLAM Apps/simple_camera.cc) 
 target_link_libraries(DefSLAM ${PROJECT_NAME})
 
 # add_executable(DefSLAMGTCT Apps/simple_CT.cc) 
