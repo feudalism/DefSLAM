@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 project(DeformableSLAM)
 
 SET(CMAKE_BUILD_TYPE RELEASE)
-SET(DEBUG_FOLDER /home/user3/git/sa-code/slam/DefSLAM)
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
