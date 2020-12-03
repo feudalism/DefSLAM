@@ -12,3 +12,4 @@ Apps/*.txt
 # GENERATED DURING BUILD
 Apps/*GT
 Apps/*GTCT
+Apps/*.png
