@@ -1,5 +1,5 @@
 echo Recompiling DefSLAM...
 cd ../build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j 6
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make -j 4
 cd ../Apps
