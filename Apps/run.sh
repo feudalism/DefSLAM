@@ -10,6 +10,7 @@ orb_voc=/home/user3/slam/DefSLAM/Vocabulary/ORBvoc.txt
 yaml=/home/user3/slam/datasets/mandala0/stereo0_2.yaml
 imgs=/home/user3/slam/datasets/mandala0/images
 ts="/home/user3/slam/datasets/mandala0/timestamps/timestamps_copy.txt"
+imu=/home/user3/slam/datasets/mandala0/imu.txt
 
 
 ### Run DefSLAM ###
@@ -21,11 +22,11 @@ echo
 
 ## Run type
 # # Debug
-gdb --args ./DefSLAM $orb_voc $yaml $imgs $ts
+gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $imu $ts
 # gdb --args ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Normal run
-# ./DefSLAM $orb_voc $yaml $imgs $ts
+# ./DefSLAM $orb_voc $yaml $imgs $ts $imu
 # ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Valgrind

@@ -44,6 +44,7 @@ ${PROJECT_SOURCE_DIR}/Modules/Settings
 ${PROJECT_SOURCE_DIR}/Modules/Template
 ${PROJECT_SOURCE_DIR}/Modules/Tracking
 ${PROJECT_SOURCE_DIR}/Modules/Viewer
+${PROJECT_SOURCE_DIR}/Modules/IMU
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CERES_INCLUDE_DIRS}
@@ -58,7 +59,8 @@ FILE(GLOB SRC_DEFSLAM_FILES
      "Modules/Matching/*.cc"
      "Modules/Template/*.cc"
      "Modules/Tracking/*.cc"
-     "Modules/Viewer/*.cc")
+     "Modules/Viewer/*.cc"
+     "Modules/IMU/*.cc")
 
 add_library(${PROJECT_NAME} SHARED
 ${SRC_DEFSLAM_FILES}
@@ -91,5 +93,5 @@ target_link_libraries(DefSLAM ${PROJECT_NAME})
 # add_executable(DefSLAMGTCT Apps/simple_CT.cc) 
 # target_link_libraries(DefSLAMGTCT ${PROJECT_NAME})
 
-add_executable(DefSLAMGT Apps/stereo_groundtruth.cc)
-target_link_libraries(DefSLAMGT ${PROJECT_NAME})
+# add_executable(DefSLAMGT Apps/stereo_groundtruth.cc)
+# target_link_libraries(DefSLAMGT ${PROJECT_NAME})

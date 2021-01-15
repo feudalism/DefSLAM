@@ -44,8 +44,9 @@
 namespace defSLAM
 {
   System::System(const string &strVocFile, const string &strSettingsFile,
-                 const bool bUseViewer)
-      : mSensor(MONOCULAR), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
+                const eSensor sensor,
+                const bool bUseViewer)
+      : mSensor(sensor), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
         mbReset(false), mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
   {
     // Output welcome message
@@ -68,11 +69,19 @@ namespace defSLAM
 #endif
     cout << "Input sensor was set to: ";
 
-    if (mSensor != MONOCULAR)
+    if (mSensor == MONOCULAR)
     {
-      cout << "Error" << endl;
+      cout << "MONOCULAR" << endl;
+    }
+    else if (mSensor == IMU_MONOCULAR)
+    {
+      cout << "IMU_MONOCULAR" << endl;
+    }
+    else
+    {
       exit(-1);
     }
+    
     // Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
     if (!fsSettings.isOpened())
