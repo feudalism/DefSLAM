@@ -35,6 +35,8 @@ find_package(Eigen3 REQUIRED)
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_2/include/
+${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/
+${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/BBS
 ${PROJECT_SOURCE_DIR}/Modules/Common
 ${PROJECT_SOURCE_DIR}/Modules/GroundTruth
@@ -70,6 +72,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Thirdparty/g2o)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Thirdparty/BBS)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_2)
+add_subdirectory(${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3)
 add_subdirectory(${PROJECT_SOURCE_DIR}/Modules/ToolsPCL)
 
 target_link_libraries(${PROJECT_NAME}
@@ -81,6 +84,7 @@ DBoW2
 g2o
 BBS
 ORBSLAM
+ORBSLAM3
 ToolsPCL
 )
  

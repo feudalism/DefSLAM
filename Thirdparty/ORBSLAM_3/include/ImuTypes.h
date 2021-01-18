@@ -31,7 +31,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
-namespace defSLAM
+namespace ORB_SLAM3
 {
 
 namespace IMU
@@ -280,6 +280,6 @@ cv::Mat NormalizeRotation(const cv::Mat &R);
 
 }
 
-} //namespace defSLAM
+} //namespace ORB_SLAM2
 
 #endif // IMUTYPES_H

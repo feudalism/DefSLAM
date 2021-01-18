@@ -21,6 +21,7 @@
 #include "System.h"
 #include "Converter.h"
 #include "set_MAC.h"
+
 #ifdef ORBSLAM
 #include "FrameDrawer.h"
 #include "LocalMapping.h"
@@ -36,6 +37,7 @@
 #include "DefTracking.h"
 #include "DefViewer.h"
 #endif
+
 #include <iomanip>
 #include <pangolin/pangolin.h>
 #include <thread>
@@ -260,7 +262,7 @@ namespace defSLAM
     return Tcw;
   }
 
-  void System::Restart(uint localzone, uint propagationzone)
+void System::Restart(uint localzone, uint propagationzone)
   {
     unique_lock<mutex> lock(MapPoint::mGlobalMutex);
     static_cast<DefMap *>(mpMap)->GetTemplate()->restart();

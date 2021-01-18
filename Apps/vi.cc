@@ -88,7 +88,7 @@ int main(int argc, char **argv)
         }
 
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im, tframe);
+        SLAM.TrackMonocular(im, tframe, vImuMeas);
     }
 
     SLAM.Shutdown();

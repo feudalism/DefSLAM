@@ -35,6 +35,7 @@
 #include "ORBVocabulary.h"
 #include "Tracking.h"
 #include "Viewer.h"
+#include "ImuTypes.h"
 
 namespace ORB_SLAM2
 {
@@ -104,6 +105,15 @@ namespace defSLAM
     // virtual cv::Mat TrackMonocularwithOut(const cv::Mat &im,const cv::Mat
     // &imOut, const double &timestamp,const cv::Mat _mask = cv::Mat());
 
+
+    // Proccess the given monocular frame and optionally imu data
+    // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to
+    // grayscale.
+    // Returns the camera pose (empty if tracking fails).
+    virtual cv::Mat TrackMonocularIMU(const cv::Mat &im, const double &timestamp,
+                                   const vector<ORB_SLAM3::IMU::Point> &vImuMeas = vector<ORB_SLAM3::IMU::Point>());
+
+    
     // Using stereo for calculate the ground truth
     virtual cv::Mat TrackMonocularGT(const cv::Mat &im, const cv::Mat &imRight,
                                      const double &timestamp,
