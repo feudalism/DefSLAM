@@ -49,9 +49,12 @@ namespace ORB_SLAM3
 
 
 ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
-        FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap,
+        FrameDrawer *pFrameDrawer,
+        MapDrawer *pMapDrawer, Map *pMap,
         KeyFrameDatabase* pKFDB,
-        const string &strSettingPath, const int sensor):
+        const string &strSettingPath,
+        const int sensor,
+        bool viewerOn)
       : ORB_SLAM2::Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
                  strSettingPath, sensor, viewerOn),
          mState(NO_IMAGES_YET)
@@ -1114,7 +1117,7 @@ ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
 // }
 
 
-void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
+void ImuTracking::GrabImuData(const IMU::Point &imuMeasurement)
 {
     unique_lock<mutex> lock(mMutexImuQueue);
     mlQueueImuData.push_back(imuMeasurement);
