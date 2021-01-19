@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     defSLAM::System SLAM(orbVocab, calibFile, defSLAM::System::IMU_MONOCULAR, true);
 
     cv::Mat im;
-    vector<defSLAM::IMU::Point> vImuMeas;
+    vector<ORB_SLAM3::IMU::Point> vImuMeas;
     for(int ni=0; ni<nImages; ni++)
     {
         std::cout << vstrImageFilenames[ni] << " i:  " << ni << std::endl;
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
         vImuMeas.clear();
         while(vTimestampsImu[firstImu]<=vTimestampsCam[ni])
         {
-            vImuMeas.push_back(defSLAM::IMU::Point(vAcc[firstImu].x,vAcc[firstImu].y,vAcc[firstImu].z,
+            vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[firstImu].x,vAcc[firstImu].y,vAcc[firstImu].z,
                                                      vGyro[firstImu].x,vGyro[firstImu].y,vGyro[firstImu].z,
                                                      vTimestampsImu[firstImu]));
             firstImu++;

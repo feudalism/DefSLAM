@@ -29,11 +29,18 @@
 #include <mutex>
 #include <opencv2/core/eigen.hpp>
 
+#include <ImuTracking.h>
+
 namespace ORB_SLAM2
 {
   class Tracking;
   class ORBmatcher;
 } // namespace ORB_SLAM2
+
+namespace ORB_SLAM3
+{
+  class ImuTracking;
+} 
 
 namespace defSLAM
 {
@@ -44,9 +51,11 @@ namespace defSLAM
   using ORB_SLAM2::ORBVocabulary;
   using ORB_SLAM2::System;
   using ORB_SLAM2::Tracking;
+  
+  using ORB_SLAM3::ImuTracking;
 
   class DefKeyFrame;
-  class DefTracking : public Tracking
+  class DefTracking : public ImuTracking
   {
 
   public:

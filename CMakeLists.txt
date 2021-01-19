@@ -36,7 +36,6 @@ include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_2/include/
 ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/
-${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/BBS
 ${PROJECT_SOURCE_DIR}/Modules/Common
 ${PROJECT_SOURCE_DIR}/Modules/GroundTruth
@@ -46,7 +45,6 @@ ${PROJECT_SOURCE_DIR}/Modules/Settings
 ${PROJECT_SOURCE_DIR}/Modules/Template
 ${PROJECT_SOURCE_DIR}/Modules/Tracking
 ${PROJECT_SOURCE_DIR}/Modules/Viewer
-${PROJECT_SOURCE_DIR}/Modules/IMU
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CERES_INCLUDE_DIRS}
@@ -61,8 +59,7 @@ FILE(GLOB SRC_DEFSLAM_FILES
      "Modules/Matching/*.cc"
      "Modules/Template/*.cc"
      "Modules/Tracking/*.cc"
-     "Modules/Viewer/*.cc"
-     "Modules/IMU/*.cc")
+     "Modules/Viewer/*.cc")
 
 add_library(${PROJECT_NAME} SHARED
 ${SRC_DEFSLAM_FILES}

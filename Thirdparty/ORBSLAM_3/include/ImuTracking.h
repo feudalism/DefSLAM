@@ -143,6 +143,9 @@ public:
         OK_KLT=5
     };
 
+    eTrackingState mState;
+    eTrackingState mLastProcessedState;
+
     // // Current Frame
     // Frame mLastFrame;
 

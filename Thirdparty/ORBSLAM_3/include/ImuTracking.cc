@@ -53,7 +53,8 @@ ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
         KeyFrameDatabase* pKFDB,
         const string &strSettingPath, const int sensor):
       : ORB_SLAM2::Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
-                 strSettingPath, sensor, viewerOn)
+                 strSettingPath, sensor, viewerOn),
+         mState(NO_IMAGES_YET)
     // mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
     // mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     // mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),

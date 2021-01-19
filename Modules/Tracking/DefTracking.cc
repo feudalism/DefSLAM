@@ -35,6 +35,7 @@
 #include <DefMap.h>
 #include <DefMapDrawer.h>
 #include <set_MAC.h>
+
 namespace defSLAM
 {
   class DefLocalMapping;
@@ -49,7 +50,7 @@ namespace defSLAM
                            KeyFrameDatabase *pKFDB,
                            const string &strSettingPath,
                            const int sensor, bool viewerOn)
-      : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
+      : ImuTracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
                  strSettingPath, sensor, viewerOn)
   {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -70,6 +71,8 @@ namespace defSLAM
     LocalZone = uint(a);
 
     ReliabilityThreshold = fSettings["Regularizer.Reliability"];
+    
+    mState = NO_IMAGES_YET;
   }
 
   // Main function of tracking.
