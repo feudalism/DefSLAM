@@ -35,6 +35,7 @@
 #include "ORBVocabulary.h"
 #include "Tracking.h"
 #include "Viewer.h"
+
 #include "ImuTypes.h"
 
 namespace ORB_SLAM2

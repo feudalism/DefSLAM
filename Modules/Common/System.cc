@@ -38,6 +38,8 @@
 #include "DefViewer.h"
 #endif
 
+#include "ImuTracking.h"
+
 #include <iomanip>
 #include <pangolin/pangolin.h>
 #include <thread>
@@ -261,6 +263,65 @@ namespace defSLAM
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
     return Tcw;
   }
+
+  cv::Mat System::TrackMonocularIMU(const cv::Mat &im, const double &timestamp,
+            const vector<ORB_SLAM3::IMU::Point>& vImuMeas)
+{
+    if(mSensor!=IMU_MONOCULAR)
+    {
+        cerr << "ERROR: you called TrackMonocularIMU but input sensor was not set to Monocular-Inertial." << endl;
+        exit(-1);
+    }
+
+    // Check mode change
+    {
+        unique_lock<mutex> lock(mMutexMode);
+        if(mbActivateLocalizationMode)
+        {
+            mpLocalMapper->RequestStop();
+
+            // Wait until Local Mapping has effectively stopped
+            while(!mpLocalMapper->isStopped())
+            {
+                usleep(1000);
+            }
+
+            mpTracker->InformOnlyTracking(true);
+            mbActivateLocalizationMode = false;
+        }
+        if(mbDeactivateLocalizationMode)
+        {
+            mpTracker->InformOnlyTracking(false);
+            mpLocalMapper->Release();
+            mbDeactivateLocalizationMode = false;
+        }
+    }
+
+    // Check reset
+    {
+        unique_lock<mutex> lock(mMutexReset);
+        if(mbReset)
+        {
+            mpTracker->Reset();
+            mbReset = false;
+        }
+    }
+
+    if (mSensor == System::IMU_MONOCULAR)
+        for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+            static_cast<ORB_SLAM3::ImuTracking *>(mpTracker)->GrabImuData(vImuMeas[i_imu]);
+
+    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
+    if (mpViewer)
+      mpViewer->Updatetimestamp(timestamp);
+
+    unique_lock<mutex> lock2(mMutexState);
+    mTrackingState = mpTracker->mState;
+    mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+
+    return Tcw;
+}
 
 void System::Restart(uint localzone, uint propagationzone)
   {
