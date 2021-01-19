@@ -24,5 +24,6 @@ ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 DBoW2
 g2o
+ORBSLAM
 )
 
