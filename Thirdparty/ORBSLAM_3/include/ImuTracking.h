@@ -22,7 +22,7 @@
 
 #include "Tracking.h"
 #include "GeometricCamera.h"
-#include "Frame.h"
+#include "ImuFrame.h"
 #include "ORBextractor.h"
 #include "ImuTypes.h"
 
