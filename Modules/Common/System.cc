@@ -307,9 +307,8 @@ namespace defSLAM
         }
     }
 
-    if (mSensor == System::IMU_MONOCULAR)
-        for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            static_cast<ORB_SLAM3::ImuTracking *>(mpTracker)->GrabImuData(vImuMeas[i_imu]);
+    for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+        static_cast<ORB_SLAM3::ImuTracking *>(mpTracker)->GrabImuData(vImuMeas[i_imu]);
 
     cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
     if (mpViewer)

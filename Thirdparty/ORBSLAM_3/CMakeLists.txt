@@ -7,12 +7,14 @@ find_package(Eigen3 REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include
+${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/CameraModels
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 )
 
 FILE(GLOB SRC_ORBSLAM3_FILES
-     "src/*.cc") 
+     "src/*.cc"
+     "src/CameraModels/*.cpp") 
 
 add_library(${PROJECT_NAME} SHARED
 ${SRC_ORBSLAM3_FILES}
