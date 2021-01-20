@@ -24,7 +24,7 @@
 #include "GeometricCamera.h"
 #include "Frame.h"
 #include "ORBextractor.h"
-// #include "ImuTypes.h"
+#include "ImuTypes.h"
 
 // #include<opencv2/core/core.hpp>
 // #include<opencv2/features2d/features2d.hpp>
@@ -92,7 +92,7 @@ class ImuTracking : public Tracking
         // Parse the config file
         bool ParseCamParamFile(cv::FileStorage &fSettings);
         bool ParseORBParamFile(cv::FileStorage &fSettings);
-        // bool ParseIMUParamFile(cv::FileStorage &fSettings);
+        bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
         // Tracking states
         enum eTrackingState{
@@ -107,6 +107,8 @@ class ImuTracking : public Tracking
 
         eTrackingState mState;
         eTrackingState mLastProcessedState;
+        
+        bool mbInitWith3KFs;
 
         // // Preprocess the input and call Track(). Extract features and performs stereo matching.
         // cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, string filename);
@@ -153,7 +155,6 @@ class ImuTracking : public Tracking
         // void ResetActiveMap(bool bLocMap = false);
 
         // float mMeanTrack;
-        // bool mbInitWith3KFs;
         // double t0; // time-stamp of first read frame
         // double t0vis; // time-stamp of first inserted keyframe
         // double t0IMU; // time-stamp of IMU initialization
@@ -184,6 +185,15 @@ class ImuTracking : public Tracking
         // ORB
         ORBextractor* mpORBextractorLeft;
         ORBextractor* mpIniORBextractor;
+        
+        // IMU
+        int mnFramesToResetIMU;
+
+        // Calibration parameters
+        IMU::Calib *mpImuCalib;
+
+        // Preintegration from last frame
+        IMU::Preintegrated *mpImuPreintegratedFromLastKF;
 
         // // Main tracking function. It is independent of the input sensor.
         // void Track();
@@ -227,70 +237,18 @@ class ImuTracking : public Tracking
 
         // bool mbMapUpdated;
 
-        // // Imu preintegration from last frame
-        // IMU::Preintegrated *mpImuPreintegratedFromLastKF;
-
-        // // Imu calibration parameters
-        // IMU::Calib *mpImuCalib;
-
         // // Last Bias Estimation (at keyframe creation)
         // IMU::Bias mLastBias;
 
-        // // In case of performing only localization, this flag is true when there are no matches to
-        // // points in the map. Still tracking will continue if there are enough matches with temporal points.
-        // // In that case we are doing visual odometry. The system will try to do relocalization to recover
-        // // "zero-drift" localization to the map.
-        // bool mbVO;
-
-        // //Other Thread Pointers
-        // LocalMapping* mpLocalMapper;
-        // LoopClosing* mpLoopClosing;
-
         // // Initalization (only for monocular)
-        // Initializer* mpInitializer;
         // bool mbSetInit;
-
-        // //Local Map
-        // KeyFrame* mpReferenceKF;
-        // std::vector<KeyFrame*> mvpLocalKeyFrames;
-        // std::vector<MapPoint*> mvpLocalMapPoints;
         
         // //Drawers
-        // Viewer* mpViewer;
-        // FrameDrawer* mpFrameDrawer;
-        // MapDrawer* mpMapDrawer;
         // bool bStepByStep;
 
-        // //Atlas
-        // Atlas* mpAtlas;
-
-        // //Calibration matrix
-        // cv::Mat mK;
-        // cv::Mat mDistCoef;
-        // float mbf;
-
-        // //New KeyFrame rules (according to fps)
-        // int mMinFrames;
-        // int mMaxFrames;
-
         // int mnFirstImuFrameId;
-        // int mnFramesToResetIMU;
-
-        // // Threshold close/far points
-        // // Points seen as close by the stereo/RGBD sensor are considered reliable
-        // // and inserted from just one frame. Far points requiere a match in two keyframes.
-        // float mThDepth;
-
-        // // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are scaled.
-        // float mDepthMapFactor;
-
-        // //Current matches in frame
-        // int mnMatchesInliers;
-
+        
         // //Last Frame, KeyFrame and Relocalisation Info
-        // KeyFrame* mpLastKeyFrame;
-        // unsigned int mnLastKeyFrameId;
-        // unsigned int mnLastRelocFrameId;
         // double mTimeStampLost;
         // double time_recently_lost;
 
@@ -315,8 +273,6 @@ class ImuTracking : public Tracking
         // double mTime_PosePred;
         // double mTime_LocalMapTrack;
         // double mTime_NewKF_Dec;
-
-        // GeometricCamera* mpCamera, *mpCamera2;
 
         // int initID, lastID;
 

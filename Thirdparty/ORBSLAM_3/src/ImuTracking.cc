@@ -79,102 +79,22 @@ ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
         std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
     }
 
-    // initID = 0; lastID = 0;
+    initID = 0; lastID = 0;
 
-    // // Load IMU parameters
-    // bool b_parse_imu = true;
-    // if(sensor==System::IMU_MONOCULAR || sensor==System::IMU_STEREO)
-    // {
-        // b_parse_imu = ParseIMUParamFile(fSettings);
-        // if(!b_parse_imu)
-        // {
-            // std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
-        // }
+    // Load IMU parameters
+    bool b_parse_imu = true;
+    if(sensor==System::IMU_MONOCULAR)
+    {
+        b_parse_imu = ParseIMUParamFile(fSettings);
+        if(!b_parse_imu)
+        {
+            std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
+        }
 
-        // mnFramesToResetIMU = mMaxFrames;
-    // }
+        mnFramesToResetIMU = mMaxFrames;
+    }
 
-    // mbInitWith3KFs = false;
-
-
-    // //Rectification parameters
-    // /*mbNeedRectify = false;
-    // if((mSensor == System::STEREO || mSensor == System::IMU_STEREO) && sCameraName == "PinHole")
-    // {
-        // cv::Mat K_l, K_r, P_l, P_r, R_l, R_r, D_l, D_r;
-        // fSettings["LEFT.K"] >> K_l;
-        // fSettings["RIGHT.K"] >> K_r;
-
-        // fSettings["LEFT.P"] >> P_l;
-        // fSettings["RIGHT.P"] >> P_r;
-
-        // fSettings["LEFT.R"] >> R_l;
-        // fSettings["RIGHT.R"] >> R_r;
-
-        // fSettings["LEFT.D"] >> D_l;
-        // fSettings["RIGHT.D"] >> D_r;
-
-        // int rows_l = fSettings["LEFT.height"];
-        // int cols_l = fSettings["LEFT.width"];
-        // int rows_r = fSettings["RIGHT.height"];
-        // int cols_r = fSettings["RIGHT.width"];
-
-        // if(K_l.empty() || K_r.empty() || P_l.empty() || P_r.empty() || R_l.empty() || R_r.empty() || D_l.empty() || D_r.empty()
-                // || rows_l==0 || cols_l==0 || rows_r==0 || cols_r==0)
-        // {
-            // mbNeedRectify = false;
-        // }
-        // else
-        // {
-            // mbNeedRectify = true;
-            // // M1r y M2r son los outputs (igual para l)
-            // // M1r y M2r son las matrices relativas al mapeo correspondiente a la rectificación de mapa en el eje X e Y respectivamente
-            // //cv::initUndistortRectifyMap(K_l,D_l,R_l,P_l.rowRange(0,3).colRange(0,3),cv::Size(cols_l,rows_l),CV_32F,M1l,M2l);
-            // //cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,M1r,M2r);
-        // }
-
-
-    // }
-    // else
-    // {
-        // int cols = 752;
-        // int rows = 480;
-        // cv::Mat R_l = cv::Mat::eye(3, 3, CV_32F);
-    // }*/
-
-    // mnNumDataset = 0;
-
-    // if(!b_parse_cam || !b_parse_orb || !b_parse_imu)
-    // {
-        // std::cerr << "**ERROR in the config file, the format is not correct**" << std::endl;
-        // try
-        // {
-            // throw -1;
-        // }
-        // catch(exception &e)
-        // {
-
-        // }
-    // }
-
-    // //f_track_stats.open("tracking_stats"+ _nameSeq + ".txt");
-    // /*f_track_stats.open("tracking_stats.txt");
-    // f_track_stats << "# timestamp, Num KF local, Num MP local, time" << endl;
-    // f_track_stats << fixed ;*/
-
-// #ifdef SAVE_TIMES
-    // f_track_times.open("tracking_times.txt");
-    // f_track_times << "# ORB_Ext(ms), Stereo matching(ms), Preintegrate_IMU(ms), Pose pred(ms), LocalMap_track(ms), NewKF_dec(ms)" << endl;
-    // f_track_times << fixed ;
-// #endif
-// }
-
-// Tracking::~Tracking()
-// {
-    // //f_track_stats.close();
-// #ifdef SAVE_TIMES
-    // f_track_times.close();
-// #endif
+    mbInitWith3KFs = false;
 }
 
 void ImuTracking::GrabImuData(const IMU::Point &imuMeasurement)
@@ -477,108 +397,107 @@ bool ImuTracking::ParseORBParamFile(cv::FileStorage &fSettings)
     return true;
 }
 
-// bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
-// {
-    // bool b_miss_params = false;
+bool ImuTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
+{
+    bool b_miss_params = false;
 
-    // cv::Mat Tbc;
-    // cv::FileNode node = fSettings["Tbc"];
-    // if(!node.empty())
-    // {
-        // Tbc = node.mat();
-        // if(Tbc.rows != 4 || Tbc.cols != 4)
-        // {
-            // std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*" << std::endl;
-            // b_miss_params = true;
-        // }
-    // }
-    // else
-    // {
-        // std::cerr << "*Tbc matrix doesn't exist*" << std::endl;
-        // b_miss_params = true;
-    // }
+    cv::Mat Tbc;
+    cv::FileNode node = fSettings["Tbc"];
+    if(!node.empty())
+    {
+        Tbc = node.mat();
+        if(Tbc.rows != 4 || Tbc.cols != 4)
+        {
+            std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*" << std::endl;
+            b_miss_params = true;
+        }
+    }
+    else
+    {
+        std::cerr << "*Tbc matrix doesn't exist*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // cout << endl;
+    cout << endl;
 
-    // cout << "Left camera to Imu Transform (Tbc): " << endl << Tbc << endl;
+    cout << "Left camera to Imu Transform (Tbc): " << endl << Tbc << endl;
 
-    // float freq, Ng, Na, Ngw, Naw;
+    float freq, Ng, Na, Ngw, Naw;
 
-    // node = fSettings["IMU.Frequency"];
-    // if(!node.empty() && node.isInt())
-    // {
-        // freq = node.operator int();
-    // }
-    // else
-    // {
-        // std::cerr << "*IMU.Frequency parameter doesn't exist or is not an integer*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["IMU.Frequency"];
+    if(!node.empty() && node.isInt())
+    {
+        freq = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*IMU.Frequency parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["IMU.NoiseGyro"];
-    // if(!node.empty() && node.isReal())
-    // {
-        // Ng = node.real();
-    // }
-    // else
-    // {
-        // std::cerr << "*IMU.NoiseGyro parameter doesn't exist or is not a real number*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["IMU.NoiseGyro"];
+    if(!node.empty() && node.isReal())
+    {
+        Ng = node.real();
+    }
+    else
+    {
+        std::cerr << "*IMU.NoiseGyro parameter doesn't exist or is not a real number*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["IMU.NoiseAcc"];
-    // if(!node.empty() && node.isReal())
-    // {
-        // Na = node.real();
-    // }
-    // else
-    // {
-        // std::cerr << "*IMU.NoiseAcc parameter doesn't exist or is not a real number*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["IMU.NoiseAcc"];
+    if(!node.empty() && node.isReal())
+    {
+        Na = node.real();
+    }
+    else
+    {
+        std::cerr << "*IMU.NoiseAcc parameter doesn't exist or is not a real number*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["IMU.GyroWalk"];
-    // if(!node.empty() && node.isReal())
-    // {
-        // Ngw = node.real();
-    // }
-    // else
-    // {
-        // std::cerr << "*IMU.GyroWalk parameter doesn't exist or is not a real number*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["IMU.GyroWalk"];
+    if(!node.empty() && node.isReal())
+    {
+        Ngw = node.real();
+    }
+    else
+    {
+        std::cerr << "*IMU.GyroWalk parameter doesn't exist or is not a real number*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["IMU.AccWalk"];
-    // if(!node.empty() && node.isReal())
-    // {
-        // Naw = node.real();
-    // }
-    // else
-    // {
-        // std::cerr << "*IMU.AccWalk parameter doesn't exist or is not a real number*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["IMU.AccWalk"];
+    if(!node.empty() && node.isReal())
+    {
+        Naw = node.real();
+    }
+    else
+    {
+        std::cerr << "*IMU.AccWalk parameter doesn't exist or is not a real number*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // if(b_miss_params)
-    // {
-        // return false;
-    // }
+    if(b_miss_params)
+    {
+        return false;
+    }
 
-    // const float sf = sqrt(freq);
-    // cout << endl;
-    // cout << "IMU frequency: " << freq << " Hz" << endl;
-    // cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-    // cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
-    // cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-    // cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
+    const float sf = sqrt(freq);
+    cout << endl;
+    cout << "IMU frequency: " << freq << " Hz" << endl;
+    cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
+    cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
+    cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
+    cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
 
-    // mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+    mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
 
-    // mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
+    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
 
-
-    // return true;
-// }
+    return true;
+}
 
 // void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
 // {
