@@ -23,6 +23,7 @@
 #include "Tracking.h"
 #include "GeometricCamera.h"
 #include "Frame.h"
+#include "ORBextractor.h"
 // #include "ImuTypes.h"
 
 // #include<opencv2/core/core.hpp>
@@ -32,7 +33,6 @@
 // #include"Viewer.h"
 // #include"LocalMapping.h"
 // #include"LoopClosing.h"
-// #include"ORBextractor.h"
 // #include "Initializer.h"
 // #include "System.h"
 // #include "FrameDrawer.h"
@@ -65,6 +65,7 @@ namespace ORB_SLAM3
     using ORB_SLAM2::MapDrawer;
     using ORB_SLAM2::ORBVocabulary;
     using ORB_SLAM2::Tracking;
+    using ORB_SLAM2::ORBextractor;
     
 // class Viewer;
 // class FrameDrawer;
@@ -90,7 +91,7 @@ class ImuTracking : public Tracking
 
         // Parse the config file
         bool ParseCamParamFile(cv::FileStorage &fSettings);
-        // bool ParseORBParamFile(cv::FileStorage &fSettings);
+        bool ParseORBParamFile(cv::FileStorage &fSettings);
         // bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
         // Tracking states
@@ -179,6 +180,10 @@ class ImuTracking : public Tracking
         int initID, lastID;
         
         GeometricCamera* mpCamera;
+        
+        // ORB
+        ORBextractor* mpORBextractorLeft;
+        ORBextractor* mpIniORBextractor;
 
         // // Main tracking function. It is independent of the input sensor.
         // void Track();
@@ -240,10 +245,6 @@ class ImuTracking : public Tracking
         // //Other Thread Pointers
         // LocalMapping* mpLocalMapper;
         // LoopClosing* mpLoopClosing;
-
-        // //ORB
-        // ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-        // ORBextractor* mpIniORBextractor;
 
         // // Initalization (only for monocular)
         // Initializer* mpInitializer;

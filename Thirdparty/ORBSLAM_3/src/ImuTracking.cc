@@ -72,12 +72,12 @@ ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
         std::cout << "*Error with the camera parameters in the config file*" << std::endl;
     }
 
-    // // Load ORB parameters
-    // bool b_parse_orb = ParseORBParamFile(fSettings);
-    // if(!b_parse_orb)
-    // {
-        // std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
-    // }
+    // Load ORB parameters
+    bool b_parse_orb = ParseORBParamFile(fSettings);
+    if(!b_parse_orb)
+    {
+        std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
+    }
 
     // initID = 0; lastID = 0;
 
@@ -398,89 +398,84 @@ bool ImuTracking::ParseCamParamFile(cv::FileStorage &fSettings)
     return true;
 }
 
-// bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
-// {
-    // bool b_miss_params = false;
-    // int nFeatures, nLevels, fIniThFAST, fMinThFAST;
-    // float fScaleFactor;
+bool ImuTracking::ParseORBParamFile(cv::FileStorage &fSettings)
+{
+    bool b_miss_params = false;
+    int nFeatures, nLevels, fIniThFAST, fMinThFAST;
+    float fScaleFactor;
 
-    // cv::FileNode node = fSettings["ORBextractor.nFeatures"];
-    // if(!node.empty() && node.isInt())
-    // {
-        // nFeatures = node.operator int();
-    // }
-    // else
-    // {
-        // std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
-        // b_miss_params = true;
-    // }
+    cv::FileNode node = fSettings["ORBextractor.nFeatures"];
+    if(!node.empty() && node.isInt())
+    {
+        nFeatures = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["ORBextractor.scaleFactor"];
-    // if(!node.empty() && node.isReal())
-    // {
-        // fScaleFactor = node.real();
-    // }
-    // else
-    // {
-        // std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["ORBextractor.scaleFactor"];
+    if(!node.empty() && node.isReal())
+    {
+        fScaleFactor = node.real();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["ORBextractor.nLevels"];
-    // if(!node.empty() && node.isInt())
-    // {
-        // nLevels = node.operator int();
-    // }
-    // else
-    // {
-        // std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["ORBextractor.nLevels"];
+    if(!node.empty() && node.isInt())
+    {
+        nLevels = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["ORBextractor.iniThFAST"];
-    // if(!node.empty() && node.isInt())
-    // {
-        // fIniThFAST = node.operator int();
-    // }
-    // else
-    // {
-        // std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["ORBextractor.iniThFAST"];
+    if(!node.empty() && node.isInt())
+    {
+        fIniThFAST = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // node = fSettings["ORBextractor.minThFAST"];
-    // if(!node.empty() && node.isInt())
-    // {
-        // fMinThFAST = node.operator int();
-    // }
-    // else
-    // {
-        // std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        // b_miss_params = true;
-    // }
+    node = fSettings["ORBextractor.minThFAST"];
+    if(!node.empty() && node.isInt())
+    {
+        fMinThFAST = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
 
-    // if(b_miss_params)
-    // {
-        // return false;
-    // }
+    if(b_miss_params)
+    {
+        return false;
+    }
 
-    // mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
-    // if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        // mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    cout << endl << "ORB Extractor Parameters: " << endl;
+    cout << "- Number of Features: " << nFeatures << endl;
+    cout << "- Scale Levels: " << nLevels << endl;
+    cout << "- Scale Factor: " << fScaleFactor << endl;
+    cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
+    cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
 
-    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        // mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-
-    // cout << endl << "ORB Extractor Parameters: " << endl;
-    // cout << "- Number of Features: " << nFeatures << endl;
-    // cout << "- Scale Levels: " << nLevels << endl;
-    // cout << "- Scale Factor: " << fScaleFactor << endl;
-    // cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    // cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
-
-    // return true;
-// }
+    return true;
+}
 
 // bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
 // {
