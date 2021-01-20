@@ -49,7 +49,6 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-
 ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
         FrameDrawer *pFrameDrawer,
         MapDrawer *pMapDrawer, Map *pMap,
@@ -210,7 +209,7 @@ cv::Mat ImuTracking::GrabImageMonocular(const cv::Mat &im, const double &timesta
 
     if (mSensor == System::MONOCULAR)
     {
-        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET || (lastID - initID) < mMaxFrames)
             mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
         else
             mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);

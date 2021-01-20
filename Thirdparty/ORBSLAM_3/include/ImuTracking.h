@@ -22,6 +22,7 @@
 
 #include "Tracking.h"
 #include "GeometricCamera.h"
+#include "Frame.h"
 // #include "ImuTypes.h"
 
 // #include<opencv2/core/core.hpp>
@@ -31,7 +32,6 @@
 // #include"Viewer.h"
 // #include"LocalMapping.h"
 // #include"LoopClosing.h"
-// #include"Frame.h"
 // #include"ORBextractor.h"
 // #include "Initializer.h"
 // #include "System.h"
@@ -58,6 +58,7 @@
 namespace ORB_SLAM3
 {
     using defSLAM::System;
+    using ORB_SLAM2::Frame;
     using ORB_SLAM2::FrameDrawer;
     using ORB_SLAM2::KeyFrameDatabase;
     using ORB_SLAM2::Map;
@@ -85,7 +86,7 @@ class ImuTracking : public Tracking
 
         void GrabImuData(const IMU::Point &imuMeasurement);
         
-        cv::Mat ImuTracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp);
+        cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
 
         // Parse the config file
         bool ParseCamParamFile(cv::FileStorage &fSettings);
@@ -177,7 +178,7 @@ class ImuTracking : public Tracking
 
         int initID, lastID;
         
-        GeometricCamera* mpCamera
+        GeometricCamera* mpCamera;
 
         // // Main tracking function. It is independent of the input sensor.
         // void Track();

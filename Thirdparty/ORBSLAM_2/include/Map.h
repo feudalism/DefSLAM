@@ -28,8 +28,13 @@
 #include <mutex>
 #include <set>
 #include <vector>
+
+#include "GeometricCamera.h"
+
 namespace ORB_SLAM2
 {
+    
+  using ORB_SLAM3::GeometricCamera;
 
   class MapPoint;
   class KeyFrame;
@@ -60,6 +65,8 @@ namespace ORB_SLAM2
     virtual void cleanTracked();
 
     virtual void clear();
+    
+    void AddCamera(GeometricCamera* pCam);
 
   public:
     std::vector<KeyFrame *> mvpKeyFrameOrigins;
@@ -82,6 +89,8 @@ namespace ORB_SLAM2
     int mnBigChangeIdx;
 
     std::mutex mMutexMap;
+    
+    std::vector<GeometricCamera*> mvpCameras;
   };
 
 } // namespace ORB_SLAM2
