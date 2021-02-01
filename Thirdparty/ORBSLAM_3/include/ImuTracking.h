@@ -57,15 +57,16 @@
 
 namespace ORB_SLAM3
 {
+    using ORB_SLAM2::Tracking;
+    
     using defSLAM::System;
-    using ORB_SLAM2::Frame;
+    
     using ORB_SLAM2::FrameDrawer;
     using ORB_SLAM2::KeyFrameDatabase;
     using ORB_SLAM2::Map;
     using ORB_SLAM2::MapDrawer;
-    using ORB_SLAM2::ORBVocabulary;
-    using ORB_SLAM2::Tracking;
-    using ORB_SLAM2::ORBextractor;
+    // using ORB_SLAM2::ORBVocabulary;
+    // using ORB_SLAM2::ORBextractor;
     
 // class Viewer;
 // class FrameDrawer;
@@ -94,6 +95,8 @@ class ImuTracking : public Tracking
         bool ParseORBParamFile(cv::FileStorage &fSettings);
         bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
+        void Reset(bool bLocMap = false);
+
         // Tracking states
         enum eTrackingState{
             SYSTEM_NOT_READY=-1,
@@ -110,6 +113,10 @@ class ImuTracking : public Tracking
         
         bool mbInitWith3KFs;
 
+        // frames with estimated pose
+        int mTrackedFr;
+        bool mbStep;
+
         // // Preprocess the input and call Track(). Extract features and performs stereo matching.
         // cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, string filename);
         // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename);
@@ -120,13 +127,6 @@ class ImuTracking : public Tracking
         // void SetLoopClosing(LoopClosing* pLoopClosing);
         // void SetViewer(Viewer* pViewer);
         // void SetStepByStep(bool bSet);
-
-        // // Load new settings
-        // // The focal lenght should be similar or scale prediction will fail when projecting points
-        // void ChangeCalibration(const string &strSettingPath);
-
-        // // Use this function if you have deactivated local mapping and you only want to localize the camera.
-        // void InformOnlyTracking(const bool &flag);
 
         // void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
         // KeyFrame* GetLastKeyFrame()
@@ -146,12 +146,6 @@ class ImuTracking : public Tracking
 
         // // Current Frame
         // Frame mLastFrame;
-
-        // // frames with estimated pose
-        // int mTrackedFr;
-        // bool mbStep;
-
-        // void Reset(bool bLocMap = false);
         // void ResetActiveMap(bool bLocMap = false);
 
         // float mMeanTrack;
@@ -194,6 +188,8 @@ class ImuTracking : public Tracking
 
         // Preintegration from last frame
         IMU::Preintegrated *mpImuPreintegratedFromLastKF;
+        
+        bool mbMapUpdated;
 
         // // Main tracking function. It is independent of the input sensor.
         // void Track();
@@ -235,7 +231,6 @@ class ImuTracking : public Tracking
         // void ComputeVelocitiesAccBias(const vector<Frame*> &vpFs, float &bax,  float &bay, float &baz);
 
 
-        // bool mbMapUpdated;
 
         // // Last Bias Estimation (at keyframe creation)
         // IMU::Bias mLastBias;
@@ -248,15 +243,15 @@ class ImuTracking : public Tracking
 
         // int mnFirstImuFrameId;
         
-        // //Last Frame, KeyFrame and Relocalisation Info
-        // double mTimeStampLost;
-        // double time_recently_lost;
+        //Last Frame, KeyFrame and Relocalisation Info
+        double mTimeStampLost;
+        double time_recently_lost;
 
-        // unsigned int mnFirstFrameId;
-        // unsigned int mnInitialFrameId;
-        // unsigned int mnLastInitFrameId;
+        unsigned int mnFirstFrameId;
+        unsigned int mnInitialFrameId;
+        unsigned int mnLastInitFrameId;
 
-        // bool mbCreatedMap;
+        bool mbCreatedMap;
 
 
         // //Motion Model

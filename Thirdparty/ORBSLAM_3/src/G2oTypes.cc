@@ -19,6 +19,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Converter.h"
+
 namespace ORB_SLAM3
 {
 
@@ -838,8 +839,8 @@ void EdgeInertialGS::computeError()
     g = VGDir->estimate().Rwg*gI;
     const double s = VS->estimate();
     const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b));
-    const Eigen::Vector3d dV = Converter::toVector3d(mpInt->GetDeltaVelocity(b));
-    const Eigen::Vector3d dP = Converter::toVector3d(mpInt->GetDeltaPosition(b));
+    const Eigen::Vector3d dV = ORB_SLAM2::Converter::toVector3d(mpInt->GetDeltaVelocity(b));
+    const Eigen::Vector3d dP = ORB_SLAM2::Converter::toVector3d(mpInt->GetDeltaPosition(b));
 
     const Eigen::Vector3d er = LogSO3(dR.transpose()*VP1->estimate().Rwb.transpose()*VP2->estimate().Rwb);
     const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(s*(VV2->estimate() - VV1->estimate()) - g*dt) - dV;

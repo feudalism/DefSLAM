@@ -39,8 +39,14 @@
 #include "ImuTypes.h"
 #include <math.h>
 
+// namespace ORB_SLAM2
+// {
+//     class Keyframe;
+// }
+
 namespace ORB_SLAM3
 {
+//using ORB_SLAM2::KeyFrame;
 
 class KeyFrame;
 class Frame;
@@ -722,9 +728,9 @@ public:
     ConstraintPoseImu(const cv::Mat &Rwb_, const cv::Mat &twb_, const cv::Mat &vwb_,
                        const IMU::Bias &b, const cv::Mat &H_)
     {
-        Rwb = Converter::toMatrix3d(Rwb_);
-        twb = Converter::toVector3d(twb_);
-        vwb = Converter::toVector3d(vwb_);
+        Rwb = ORB_SLAM2::Converter::toMatrix3d(Rwb_);
+        twb = ORB_SLAM2::Converter::toVector3d(twb_);
+        vwb = ORB_SLAM2::Converter::toVector3d(vwb_);
         bg << b.bwx, b.bwy, b.bwz;
         ba << b.bax, b.bay, b.baz;
         for(int i=0;i<15;i++)
@@ -788,7 +794,7 @@ class EdgePriorAcc : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexAccBias>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgePriorAcc(const cv::Mat &bprior_):bprior(Converter::toVector3d(bprior_)){}
+    EdgePriorAcc(const cv::Mat &bprior_):bprior(ORB_SLAM2::Converter::toVector3d(bprior_)){}
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -812,7 +818,7 @@ class EdgePriorGyro : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexGyroBias
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgePriorGyro(const cv::Mat &bprior_):bprior(Converter::toVector3d(bprior_)){}
+    EdgePriorGyro(const cv::Mat &bprior_):bprior(ORB_SLAM2::Converter::toVector3d(bprior_)){}
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}

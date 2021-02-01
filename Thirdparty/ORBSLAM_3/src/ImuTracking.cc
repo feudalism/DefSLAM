@@ -58,10 +58,10 @@ ImuTracking::ImuTracking(System *pSys, ORBVocabulary* pVoc,
         bool viewerOn)
       : ORB_SLAM2::Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
                  strSettingPath, sensor, viewerOn),
-         mState(NO_IMAGES_YET)
-    // mTrackedFr(0), mbStep(false),
-    // mbMapUpdated(false), time_recently_lost(5.0),
-    // mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr)
+         mState(NO_IMAGES_YET),
+         mTrackedFr(0), mbStep(false),
+         mbMapUpdated(false), time_recently_lost(5.0),
+         mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0)
 {
     // Load camera parameters from settings file
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -107,9 +107,7 @@ cv::Mat ImuTracking::GrabImageMonocular(const cv::Mat &im, const double &timesta
 {
     // Convert to greyscale
     mImGray = im.clone();
-    // im.copyTo(mImRGB);
-    // saveResults = false;
-    
+        
     if (mImGray.channels() == 3)
     {
       if (mbRGB)
@@ -130,13 +128,14 @@ cv::Mat ImuTracking::GrabImageMonocular(const cv::Mat &im, const double &timesta
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET || (lastID - initID) < mMaxFrames)
-            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = ORB_SLAM3::Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
         else
-            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = ORB_SLAM3::Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
     }
     mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
                               mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
 
+    lastID = mCurrentFrame.mnId;
     Track();
 
     return mCurrentFrame->mTcw.clone();
@@ -408,7 +407,7 @@ bool ImuTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
         Tbc = node.mat();
         if(Tbc.rows != 4 || Tbc.cols != 4)
         {
-            std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*" << std::endl;
+            std::cerr << "*Tbc matrix has to be a 4x4 transformation matrix*" << std::endl;
             b_miss_params = true;
         }
     }
@@ -2950,70 +2949,70 @@ bool ImuTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
 
 // }
 
-// void Tracking::Reset(bool bLocMap)
-// {
+void Tracking::Reset(bool bLocMap)
+{
     // Verbose::PrintMess("System Reseting", Verbose::VERBOSITY_NORMAL);
 
-    // if(mpViewer)
-    // {
-        // mpViewer->RequestStop();
-        // while(!mpViewer->isStopped())
-            // usleep(3000);
-    // }
+    if(mpViewer)
+    {
+        mpViewer->RequestStop();
+        while(!mpViewer->isStopped())
+            usleep(3000);
+    }
 
-    // // Reset Local Mapping
-    // if (!bLocMap)
-    // {
+    // Reset Local Mapping
+    if (!bLocMap)
+    {
         // Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_NORMAL);
-        // mpLocalMapper->RequestReset();
+        mpLocalMapper->RequestReset();
         // Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
-    // }
+    }
 
 
-    // // Reset Loop Closing
+    // Reset Loop Closing
     // Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    // mpLoopClosing->RequestReset();
+    mpLoopClosing->RequestReset();
     // Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
-    // // Clear BoW Database
+    // Clear BoW Database
     // Verbose::PrintMess("Reseting Database...", Verbose::VERBOSITY_NORMAL);
-    // mpKeyFrameDB->clear();
+    mpKeyFrameDB->clear();
     // Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
-    // // Clear Map (this erase MapPoints and KeyFrames)
+    // Clear Map (this erase MapPoints and KeyFrames)
     // mpAtlas->clearAtlas();
     // mpAtlas->CreateNewMap();
     // if (mSensor==System::IMU_STEREO || mSensor == System::IMU_MONOCULAR)
         // mpAtlas->SetInertialSensor();
-    // mnInitialFrameId = 0;
+    mnInitialFrameId = 0;
 
-    // KeyFrame::nNextId = 0;
-    // Frame::nNextId = 0;
-    // mState = NO_IMAGES_YET;
+    KeyFrame::nNextId = 0;
+    Frame::nNextId = 0;
+    mState = NO_IMAGES_YET;
 
-    // if(mpInitializer)
-    // {
-        // delete mpInitializer;
-        // mpInitializer = static_cast<Initializer*>(NULL);
-    // }
-    // mbSetInit=false;
+    if(mpInitializer)
+    {
+        delete mpInitializer;
+        mpInitializer = static_cast<Initializer*>(NULL);
+    }
+    mbSetInit=false;
 
-    // mlRelativeFramePoses.clear();
-    // mlpReferences.clear();
-    // mlFrameTimes.clear();
-    // mlbLost.clear();
-    // mCurrentFrame = Frame();
-    // mnLastRelocFrameId = 0;
-    // mLastFrame = Frame();
-    // mpReferenceKF = static_cast<KeyFrame*>(NULL);
-    // mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-    // mvIniMatches.clear();
+    mlRelativeFramePoses.clear();
+    mlpReferences.clear();
+    mlFrameTimes.clear();
+    mlbLost.clear();
+    
+    mCurrentFrame = Frame();
+    mnLastRelocFrameId = 0;
+    mLastFrame = Frame();
+    
+    mpReferenceKF = static_cast<KeyFrame*>(NULL);
+    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
+    mvIniMatches.clear();
 
-    // if(mpViewer)
-        // mpViewer->Release();
-
-    // Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
-// }
+    if(mpViewer)
+        mpViewer->Release();
+}
 
 // void Tracking::ResetActiveMap(bool bLocMap)
 // {
@@ -3111,44 +3110,6 @@ bool ImuTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
 // vector<MapPoint*> Tracking::GetLocalMapMPS()
 // {
     // return mvpLocalMapPoints;
-// }
-
-// void Tracking::ChangeCalibration(const string &strSettingPath)
-// {
-    // cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-    // float fx = fSettings["Camera.fx"];
-    // float fy = fSettings["Camera.fy"];
-    // float cx = fSettings["Camera.cx"];
-    // float cy = fSettings["Camera.cy"];
-
-    // cv::Mat K = cv::Mat::eye(3,3,CV_32F);
-    // K.at<float>(0,0) = fx;
-    // K.at<float>(1,1) = fy;
-    // K.at<float>(0,2) = cx;
-    // K.at<float>(1,2) = cy;
-    // K.copyTo(mK);
-
-    // cv::Mat DistCoef(4,1,CV_32F);
-    // DistCoef.at<float>(0) = fSettings["Camera.k1"];
-    // DistCoef.at<float>(1) = fSettings["Camera.k2"];
-    // DistCoef.at<float>(2) = fSettings["Camera.p1"];
-    // DistCoef.at<float>(3) = fSettings["Camera.p2"];
-    // const float k3 = fSettings["Camera.k3"];
-    // if(k3!=0)
-    // {
-        // DistCoef.resize(5);
-        // DistCoef.at<float>(4) = k3;
-    // }
-    // DistCoef.copyTo(mDistCoef);
-
-    // mbf = fSettings["Camera.bf"];
-
-    // Frame::mbInitialComputations = true;
-// }
-
-// void Tracking::InformOnlyTracking(const bool &flag)
-// {
-    // mbOnlyTracking = flag;
 // }
 
 // void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
