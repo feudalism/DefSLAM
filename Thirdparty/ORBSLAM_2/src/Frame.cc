@@ -783,4 +783,25 @@ namespace ORB_SLAM2
     else
       return cv::Mat();
   }
+
+// OS3
+cv::Mat Frame::GetImuPosition()
+{
+    return mRwc*mImuCalib.Tcb.rowRange(0,3).col(3)+mOw;
+}
+
+cv::Mat Frame::GetImuRotation()
+{
+    return mRwc*mImuCalib.Tcb.rowRange(0,3).colRange(0,3);
+}
+
+cv::Mat Frame::GetImuPose()
+{
+    cv::Mat Twb = cv::Mat::eye(4,4,CV_32F);
+    Twb.rowRange(0,3).colRange(0,3) = mRwc*mImuCalib.Tcb.rowRange(0,3).colRange(0,3);
+    Twb.rowRange(0,3).col(3) = mRwc*mImuCalib.Tcb.rowRange(0,3).col(3)+mOw;
+    return Twb.clone();
+}
+  
+
 } // namespace ORB_SLAM2
