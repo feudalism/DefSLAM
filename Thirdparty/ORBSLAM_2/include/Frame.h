@@ -30,10 +30,16 @@
 #include "ORBextractor.h"
 #include <opencv2/opencv.hpp>
 
+#include <mutex>
+#include "ImuTypes.h"
+#include "GeometricCamera.h"
+
 namespace ORB_SLAM2
 {
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
+
+    using ORB_SLAM3::GeometricCamera;
 
     class MapPoint;
     class KeyFrame;
@@ -105,6 +111,12 @@ namespace ORB_SLAM2
 
         // Projection of a 3D point in absolute coordinates
         cv::KeyPoint ProjectPoints(const cv::Mat &);
+        
+    // OS3
+    public:
+        cv::Mat GetImuPosition();
+        cv::Mat GetImuRotation();
+        cv::Mat GetImuPose();
 
     public:
         // Vocabulary used for relocalization.
@@ -178,7 +190,32 @@ namespace ORB_SLAM2
 
         // Camera pose.
         cv::Mat mTcw;
+        
+    // OS3
+    public:
+        // ConstraintPoseImu* mpcpi;
+        int mnCloseMPs;
+    
+        // IMU linear velocity
+        cv::Mat mVw;
+        
+        // IMU prediction
+        cv::Mat mPredRwb, mPredtwb, mPredVwb;
+        ORB_SLAM3::IMU::Bias mPredBias;
 
+        // IMU bias, calib
+        ORB_SLAM3::IMU::Bias mImuBias;
+        ORB_SLAM3::IMU::Calib mImuCalib;
+
+        // Imu preintegration from last keyframe
+        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
+        KeyFrame* mpLastKeyFrame;
+
+        // Pointer to previous frame
+        Frame* mpPrevFrame;
+        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegratedFrame;        
+
+    public:
         // Current and Next Frame id.
         static long unsigned int nNextId;
         long unsigned int mnId;
@@ -211,6 +248,41 @@ namespace ORB_SLAM2
 
         //Reprojection error for insertion KF criteria
         float repError;
+        
+    // OS3
+    public:
+        map<long unsigned int, cv::Point2f> mmProjectPoints;
+        map<long unsigned int, cv::Point2f> mmMatchedInImage;
+
+        string mNameFile;
+
+        int mnDataset;
+
+        double mTimeStereoMatch;
+        double mTimeORB_Ext;
+    
+        GeometricCamera* mpCamera, *mpCamera2;
+
+        //Number of KeyPoints extracted in the left and right images
+        int Nleft, Nright;
+        //Number of Non Lapping Keypoints
+        int monoLeft, monoRight;
+
+        //For stereo matching
+        std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
+
+        //For stereo fisheye matching
+        static cv::BFMatcher BFmatcher;
+
+        //Triangulated stereo observations using as reference the left camera. These are
+        //computed during ComputeStereoFishEyeMatches
+        std::vector<cv::Mat> mvStereo3Dpoints;
+
+        //Grid for the right image
+        std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+        
+        cv::Mat mTlr, mRlr, mtlr, mTrl;
+        
 
     protected:
         // Undistort keypoints given OpenCV distortion parameters.
@@ -229,6 +301,11 @@ namespace ORB_SLAM2
         cv::Mat mtcw;
         cv::Mat mRwc;
         cv::Mat mOw; //==mtwc
+
+    // OS3
+    private:
+        bool mbImuPreintegrated;
+        std::mutex *mpMutexImu;
     };
 
 } // namespace ORB_SLAM2
