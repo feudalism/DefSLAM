@@ -21,8 +21,8 @@ echo
 
 ## Run type
 # # Debug
-# gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $ts
-gdb --command=./debug.sh --args ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
+gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $ts
+# gdb --command=./debug.sh --args ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Normal run
 # ./DefSLAM $orb_voc $yaml $imgs $ts
