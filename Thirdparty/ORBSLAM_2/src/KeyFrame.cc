@@ -56,7 +56,9 @@ namespace ORB_SLAM2
         mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
         mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb / 2), mpMap(pMap),
         RGBimage(1024, 1024, F.ImRGB.type(), cv::Scalar(0, 0, 0)),
-        imGray(F.ImGray.clone())
+        imGray(F.ImGray.clone()),
+        // OS3
+        NLeft(F.Nleft), NRight(F.Nright)
   {
     mnId = nNextId++;
     mGrid.resize(mnGridCols);
@@ -780,5 +782,56 @@ std::set<Facet*> KeyFrame::getFacets(){
     unique_lock<mutex> lock(mMutexFacets);
     return mFacetsTex;
 }*/
+
+// OS3
+cv::Mat KeyFrame::GetImuPosition()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Owb.clone();
+}
+
+cv::Mat KeyFrame::GetImuRotation()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Twc.rowRange(0,3).colRange(0,3)*mImuCalib.Tcb.rowRange(0,3).colRange(0,3);
+}
+
+cv::Mat KeyFrame::GetImuPose()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Twc*mImuCalib.Tcb;
+}
+
+cv::Mat KeyFrame::GetVelocity()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Vw.clone();
+}
+
+// void KeyFrame::SetNewBias(const ORB_SLAM3::IMU::Bias &b)
+// {
+    // unique_lock<mutex> lock(mMutexPose);
+    // mImuBias = b;
+    // if(mpImuPreintegrated)
+        // mpImuPreintegrated->SetNewBias(b);
+// }
+
+cv::Mat KeyFrame::GetGyroBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return (cv::Mat_<float>(3,1) << mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+}
+
+cv::Mat KeyFrame::GetAccBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return (cv::Mat_<float>(3,1) << mImuBias.bax, mImuBias.bay, mImuBias.baz);
+}
+
+ORB_SLAM3::IMU::Bias KeyFrame::GetImuBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return mImuBias;
+}
 
 } // namespace ORB_SLAM2
