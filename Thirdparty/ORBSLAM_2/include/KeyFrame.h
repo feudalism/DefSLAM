@@ -31,9 +31,12 @@
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
 #include <mutex>
+#include "ImuTypes.h"
+#include "GeometricCamera.h"
 
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::GeometricCamera;
 
   class Map;
   class MapPoint;
@@ -258,6 +261,52 @@ namespace ORB_SLAM2
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
     std::mutex mMutexFacets;
+    
+  // OS3
+public:
+    cv::Mat GetImuPosition();
+    cv::Mat GetImuRotation();
+    cv::Mat GetImuPose();
+    cv::Mat GetVelocity();
+
+    // void SetNewBias(const ORB_SLAM3::IMU::Bias &b);
+    cv::Mat GetGyroBias();
+    cv::Mat GetAccBias();
+    ORB_SLAM3::IMU::Bias GetImuBias();
+    
+    GeometricCamera* mpCamera, *mpCamera2;
+
+    //Indexes of stereo observations correspondences
+    std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
+
+    //Transformation matrix between cameras in stereo fisheye
+    cv::Mat mTlr;
+    cv::Mat mTrl;
+
+    //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
+    const std::vector<cv::KeyPoint> mvKeysRight;
+
+    const int NLeft, NRight;
+
+    std::vector< std::vector <std::vector<size_t> > > mGridRight;
+
+    // Preintegrated IMU measurements from previous keyframe
+    KeyFrame* mPrevKF;
+    KeyFrame* mNextKF;
+
+    ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
+    ORB_SLAM3::IMU::Calib mImuCalib;
+    
+protected:
+    // IMU position
+    cv::Mat Owb;
+
+    // Velocity (Only used for inertial SLAM)
+    cv::Mat Vw;
+
+    // Imu bias
+    ORB_SLAM3::IMU::Bias mImuBias;
+  
   };
 
 } // namespace ORB_SLAM2
