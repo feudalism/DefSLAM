@@ -34,7 +34,7 @@
 namespace ORB_SLAM2
 {
   using ORB_SLAM3::Pinhole;
-  using ORB_SLAM3::IMU::Calib;
+  using defSLAM::IMU::Calib;
 
   long unsigned int Frame::nNextId = 0;
   bool Frame::mbInitialComputations = true;
@@ -322,7 +322,7 @@ namespace ORB_SLAM2
   Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
                 GeometricCamera* pCamera,
                 cv::Mat &distCoef, const float &bf, const float &thDepth,
-                const Calib &ImuCalib, Frame* pPrevF)
+                Frame* pPrevF, const Calib &ImuCalib)
        : mpcpi(NULL),
          mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
          mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()),

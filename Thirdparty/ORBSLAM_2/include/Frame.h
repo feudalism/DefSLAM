@@ -22,6 +22,10 @@
 
 #include <vector>
 
+#include "ImuTypes.h"
+#include "GeometricCamera.h"
+#include "ConstraintPoseImu.h"
+
 #include "MapPoint.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
@@ -31,10 +35,6 @@
 #include <opencv2/opencv.hpp>
 
 #include <mutex>
-#include "ImuTypes.h"
-#include "GeometricCamera.h"
-// #include "G2oTypes.h"
-#include "ConstraintPoseImu.h"
 
 namespace ORB_SLAM2
 {
@@ -43,6 +43,7 @@ namespace ORB_SLAM2
 
     using ORB_SLAM3::GeometricCamera;
     using ORB_SLAM3::ConstraintPoseImu;
+    using defSLAM::IMU::Calib;
     
     class MapPoint;
     class KeyFrame;
@@ -63,14 +64,22 @@ namespace ORB_SLAM2
         // Constructor for RGB-D cameras.
         Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORB_SLAM2::ORBextractor *extractor, ORB_SLAM2::ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, cv::Mat _mask = cv::Mat());
 
-        // Constructor for Monocular cameras.
+        // Constructor for Monocular cameras. (OS2; w/o camera)
         Frame(const cv::Mat &imGray, const double &timeStamp, ORB_SLAM2::ORBextractor *extractor, ORB_SLAM2::ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
         //  Frame(const cv::Mat &imGray, const double &timeStamp, ORB_SLAM2::ORBextractor* extractor,ORB_SLAM2::ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth,const cv::Mat &ImRGB, const cv::Mat &ImOut,cv::Mat _mask = cv::Mat());
+
+        // Constructor for Monocular cameras (OS3; with camera)
+        Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
+                GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,
+                Frame* pPrevF = static_cast<Frame*>(NULL),
+                const Calib &ImuCalib = Calib());
+                // const Calib &ImuCalib = Calib());
 
         virtual ~Frame();
 
         // Extract ORB on the image. 0 for left image and 1 for right image.
         void ExtractORB(int flag, const cv::Mat &im);
+        // void ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1);
 
         // Compute Bag of Words representation.
         void ComputeBoW();
@@ -204,19 +213,19 @@ namespace ORB_SLAM2
         
         // IMU prediction
         cv::Mat mPredRwb, mPredtwb, mPredVwb;
-        ORB_SLAM3::IMU::Bias mPredBias;
+        defSLAM::IMU::Bias mPredBias;
 
         // IMU bias, calib
-        ORB_SLAM3::IMU::Bias mImuBias;
-        ORB_SLAM3::IMU::Calib mImuCalib;
+        defSLAM::IMU::Bias mImuBias;
+        Calib mImuCalib;
 
         // Imu preintegration from last keyframe
-        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
+        defSLAM::IMU::Preintegrated* mpImuPreintegrated;
         KeyFrame* mpLastKeyFrame;
 
         // Pointer to previous frame
         Frame* mpPrevFrame;
-        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegratedFrame;        
+        defSLAM::IMU::Preintegrated* mpImuPreintegratedFrame;        
 
     public:
         // Current and Next Frame id.
