@@ -33,6 +33,8 @@
 #include <mutex>
 #include "ImuTypes.h"
 #include "GeometricCamera.h"
+// #include "G2oTypes.h"
+#include "ConstraintPoseImu.h"
 
 namespace ORB_SLAM2
 {
@@ -40,7 +42,8 @@ namespace ORB_SLAM2
 #define FRAME_GRID_COLS 64
 
     using ORB_SLAM3::GeometricCamera;
-
+    using ORB_SLAM3::ConstraintPoseImu;
+    
     class MapPoint;
     class KeyFrame;
 
@@ -193,7 +196,7 @@ namespace ORB_SLAM2
         
     // OS3
     public:
-        // ConstraintPoseImu* mpcpi;
+        ConstraintPoseImu* mpcpi;
         int mnCloseMPs;
     
         // IMU linear velocity
