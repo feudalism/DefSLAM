@@ -27,8 +27,14 @@
 #ifndef NTHREADS
 #define NTHREADS 2
 #endif
+
+#include <Thirdparty/ORBSLAM_3/include/CameraModels/Pinhole.h>
+#include "ImuTypes.h"
+
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::Pinhole;
+  using ORB_SLAM3::IMU::Calib;
 
   long unsigned int Frame::nNextId = 0;
   bool Frame::mbInitialComputations = true;
@@ -36,7 +42,8 @@ namespace ORB_SLAM2
   float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
   float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 
-  Frame::Frame() {}
+  Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
+  {}
 
   Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const cv::Mat &K,
                const cv::Mat &mTcw, const cv::Mat &distCoef, const cv::Mat &ImRGB,
@@ -57,7 +64,20 @@ namespace ORB_SLAM2
 
   // Copy Constructor
   Frame::Frame(const Frame &frame)
-      : mpORBvocabulary(frame.mpORBvocabulary),
+      : mpcpi(frame.mpcpi),
+        mImuCalib(frame.mImuCalib), mnCloseMPs(frame.mnCloseMPs),
+        mpImuPreintegrated(frame.mpImuPreintegrated),
+        mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame), mImuBias(frame.mImuBias),
+        mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
+        mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame),
+        mbImuPreintegrated(frame.mbImuPreintegrated), mpMutexImu(frame.mpMutexImu),
+        mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
+        monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
+        mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
+        mTlr(frame.mTlr.clone()), mRlr(frame.mRlr.clone()), mtlr(frame.mtlr.clone()), mTrl(frame.mTrl.clone()),
+        mTimeStereoMatch(frame.mTimeStereoMatch), mTimeORB_Ext(frame.mTimeORB_Ext),
+        // old OS2
+        mpORBvocabulary(frame.mpORBvocabulary),
         mpORBextractorLeft(frame.mpORBextractorLeft),
         mpORBextractorRight(frame.mpORBextractorRight),
         mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()),
@@ -86,8 +106,16 @@ namespace ORB_SLAM2
 
     if (!frame.mTcw.empty())
       SetPose(frame.mTcw);
+
+    // OS3
+    if(!frame.mVw.empty())
+        mVw = frame.mVw.clone();
+
+    mmProjectPoints = frame.mmProjectPoints;
+    mmMatchedInImage = frame.mmMatchedInImage;
   }
 
+  // Stereo constructor
   Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight,
                const double &timeStamp, ORBextractor *extractorLeft,
                ORBextractor *extractorRight, ORBVocabulary *voc, cv::Mat &K,
@@ -155,6 +183,7 @@ namespace ORB_SLAM2
     AssignFeaturesToGrid();
   }
 
+  // RGB-D constructor
   Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth,
                const double &timeStamp, ORBextractor *extractor,
                ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
@@ -217,11 +246,19 @@ namespace ORB_SLAM2
     AssignFeaturesToGrid();
   }
 
+  // Monocular constructor (without camera)
   Frame::Frame(const cv::Mat &imGray, const double &timeStamp,
-               ORBextractor *extractor, ORBVocabulary *voc, cv::Mat &K,
+               ORBextractor *extractor, ORBVocabulary *voc,
+               cv::Mat &K,
                cv::Mat &distCoef, const float &bf, const float &thDepth,
                const cv::Mat &imRGB, cv::Mat _mask)
-      : mpORBvocabulary(voc), mpORBextractorLeft(extractor),
+      : mpcpi(NULL),
+        mpImuPreintegrated(NULL),
+        mpImuPreintegratedFrame(NULL),
+        mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(nullptr),
+        mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0),
+        // old OS2
+        mpORBvocabulary(voc), mpORBextractorLeft(extractor),
         mpORBextractorRight(static_cast<ORBextractor *>(nullptr)),
         mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()),
         mbf(bf), mThDepth(thDepth), ImGray(imGray.clone()), ImRGB(imRGB.clone()),
@@ -281,6 +318,108 @@ namespace ORB_SLAM2
     AssignFeaturesToGrid();
   }
 
+  // Monocular constructor (with camera; from OS3)
+  Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
+                GeometricCamera* pCamera,
+                cv::Mat &distCoef, const float &bf, const float &thDepth,
+                const Calib &ImuCalib, Frame* pPrevF)
+       : mpcpi(NULL),
+         mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+         mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()),
+         mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+         mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL),
+         mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
+         mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+  {
+        // Frame ID
+        mnId=nNextId++;
+
+        // Scale Level Info
+        mnScaleLevels = mpORBextractorLeft->GetLevels();
+        mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+        mfLogScaleFactor = log(mfScaleFactor);
+        mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+        mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+        mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+        mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+
+        // ORB extraction
+    #ifdef SAVE_TIMES
+        std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
+    #endif
+        // ExtractORB(0,imGray,0,1000); // TODO: revert back to this!
+        ExtractORB(0,imGray);
+    #ifdef SAVE_TIMES
+        std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
+
+        mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
+    #endif
+
+        N = mvKeys.size();
+        if(mvKeys.empty())
+            return;
+
+        UndistortKeyPoints();
+
+        // Set no stereo information
+        mvuRight = vector<float>(N,-1);
+        mvDepth = vector<float>(N,-1);
+        mnCloseMPs = 0;
+
+        mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+
+        mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
+        mmMatchedInImage.clear();
+
+        mvbOutlier = vector<bool>(N,false);
+
+        // This is done only for the first Frame (or after a change in the calibration)
+        if(mbInitialComputations)
+        {
+            ComputeImageBounds(imGray);
+
+            mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
+            mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
+
+            fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
+            fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
+            cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
+            cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
+            invfx = 1.0f/fx;
+            invfy = 1.0f/fy;
+
+            mbInitialComputations=false;
+        }
+
+        mb = mbf/fx;
+
+        //Set no stereo fisheye information
+        Nleft = -1;
+        Nright = -1;
+        mvLeftToRightMatch = vector<int>(0);
+        mvRightToLeftMatch = vector<int>(0);
+        mTlr = cv::Mat(3,4,CV_32F);
+        mTrl = cv::Mat(3,4,CV_32F);
+        mvStereo3Dpoints = vector<cv::Mat>(0);
+        monoLeft = -1;
+        monoRight = -1;
+
+        AssignFeaturesToGrid();
+
+        // mVw = cv::Mat::zeros(3,1,CV_32F);
+        if(pPrevF)
+        {
+            if(!pPrevF->mVw.empty())
+                mVw = pPrevF->mVw.clone();
+        }
+        else
+        {
+            mVw = cv::Mat::zeros(3,1,CV_32F);
+        }
+
+        mpMutexImu = new std::mutex();
+  }
+
   Frame::~Frame()
   {
     mvpMapPoints.clear();
@@ -310,16 +449,20 @@ namespace ORB_SLAM2
 
   void Frame::ExtractORB(int flag, const cv::Mat &im)
   {
-
     if (flag == 0)
-    {
-      (*mpORBextractorLeft)(im.clone(), _mask, mvKeys, mDescriptors);
-    }
+        (*mpORBextractorLeft)(im.clone(), _mask, mvKeys, mDescriptors);
     else
-    {
-      (*mpORBextractorRight)(im.clone(), _mask, mvKeysRight, mDescriptorsRight);
-    }
+        (*mpORBextractorRight)(im.clone(), _mask, mvKeysRight, mDescriptorsRight);
   }
+  
+  // void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
+  // {
+    // vector<int> vLapping = {x0,x1};
+    // if(flag==0)
+        // monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+    // else
+        // monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
+  // }
 
   void Frame::SetPose(cv::Mat Tcw)
   {
