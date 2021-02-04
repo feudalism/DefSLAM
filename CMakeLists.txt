@@ -40,6 +40,7 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/ORBSLAM_3/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/BBS
 ${PROJECT_SOURCE_DIR}/Modules/Common
 ${PROJECT_SOURCE_DIR}/Modules/GroundTruth
+${PROJECT_SOURCE_DIR}/Modules/IMU
 ${PROJECT_SOURCE_DIR}/Modules/Mapping
 ${PROJECT_SOURCE_DIR}/Modules/Matching
 ${PROJECT_SOURCE_DIR}/Modules/Settings
@@ -56,6 +57,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 FILE(GLOB SRC_DEFSLAM_FILES
      "Modules/Common/*.cc"
      "Modules/GroundTruth/*.cc"
+     "Modules/IMU/*.cc"
      "Modules/Mapping/*.cc"
      "Modules/Matching/*.cc"
      "Modules/Template/*.cc"

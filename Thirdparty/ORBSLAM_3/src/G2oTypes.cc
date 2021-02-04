@@ -692,13 +692,13 @@ VertexAccBias::VertexAccBias(Frame *pF)
 
 
 
-EdgeInertial::EdgeInertial(IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
+EdgeInertial::EdgeInertial(defSLAM::IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
     JVg(Converter::toMatrix3d(pInt->JVg)), JPg(Converter::toMatrix3d(pInt->JPg)), JVa(Converter::toMatrix3d(pInt->JVa)),
     JPa(Converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
 {
     // This edge links 6 vertices
     resize(6);
-    g << 0, 0, -IMU::GRAVITY_VALUE;
+    g << 0, 0, -defSLAM::IMU::GRAVITY_VALUE;
     cv::Mat cvInfo = pInt->C.rowRange(0,9).colRange(0,9).inv(cv::DECOMP_SVD);
     Matrix9d Info;
     for(int r=0;r<9;r++)
@@ -726,7 +726,7 @@ void EdgeInertial::computeError()
     const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);
     const VertexPose* VP2 = static_cast<const VertexPose*>(_vertices[4]);
     const VertexVelocity* VV2 = static_cast<const VertexVelocity*>(_vertices[5]);
-    const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
+    const defSLAM::IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
     const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b1));
     const Eigen::Vector3d dV = Converter::toVector3d(mpInt->GetDeltaVelocity(b1));
     const Eigen::Vector3d dP = Converter::toVector3d(mpInt->GetDeltaPosition(b1));
@@ -747,8 +747,8 @@ void EdgeInertial::linearizeOplus()
     const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);
     const VertexPose* VP2 = static_cast<const VertexPose*>(_vertices[4]);
     const VertexVelocity* VV2= static_cast<const VertexVelocity*>(_vertices[5]);
-    const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
-    const IMU::Bias db = mpInt->GetDeltaBias(b1);
+    const defSLAM::IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
+    const defSLAM::IMU::Bias db = mpInt->GetDeltaBias(b1);
     Eigen::Vector3d dbg;
     dbg << db.bwx, db.bwy, db.bwz;
 
@@ -799,13 +799,13 @@ void EdgeInertial::linearizeOplus()
     _jacobianOplus[5].block<3,3>(3,0) = Rbw1; // OK
 }
 
-EdgeInertialGS::EdgeInertialGS(IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
+EdgeInertialGS::EdgeInertialGS(defSLAM::IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
     JVg(Converter::toMatrix3d(pInt->JVg)), JPg(Converter::toMatrix3d(pInt->JPg)), JVa(Converter::toMatrix3d(pInt->JVa)),
     JPa(Converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
 {
     // This edge links 8 vertices
     resize(8);
-    gI << 0, 0, -IMU::GRAVITY_VALUE;
+    gI << 0, 0, -defSLAM::IMU::GRAVITY_VALUE;
     cv::Mat cvInfo = pInt->C.rowRange(0,9).colRange(0,9).inv(cv::DECOMP_SVD);
     Matrix9d Info;
     for(int r=0;r<9;r++)
@@ -834,7 +834,7 @@ void EdgeInertialGS::computeError()
     const VertexVelocity* VV2 = static_cast<const VertexVelocity*>(_vertices[5]);
     const VertexGDir* VGDir = static_cast<const VertexGDir*>(_vertices[6]);
     const VertexScale* VS = static_cast<const VertexScale*>(_vertices[7]);
-    const IMU::Bias b(VA->estimate()[0],VA->estimate()[1],VA->estimate()[2],VG->estimate()[0],VG->estimate()[1],VG->estimate()[2]);
+    const defSLAM::IMU::Bias b(VA->estimate()[0],VA->estimate()[1],VA->estimate()[2],VG->estimate()[0],VG->estimate()[1],VG->estimate()[2]);
     g = VGDir->estimate().Rwg*gI;
     const double s = VS->estimate();
     const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b));
@@ -858,8 +858,8 @@ void EdgeInertialGS::linearizeOplus()
     const VertexVelocity* VV2 = static_cast<const VertexVelocity*>(_vertices[5]);
     const VertexGDir* VGDir = static_cast<const VertexGDir*>(_vertices[6]);
     const VertexScale* VS = static_cast<const VertexScale*>(_vertices[7]);
-    const IMU::Bias b(VA->estimate()[0],VA->estimate()[1],VA->estimate()[2],VG->estimate()[0],VG->estimate()[1],VG->estimate()[2]);
-    const IMU::Bias db = mpInt->GetDeltaBias(b);
+    const defSLAM::IMU::Bias b(VA->estimate()[0],VA->estimate()[1],VA->estimate()[2],VG->estimate()[0],VG->estimate()[1],VG->estimate()[2]);
+    const defSLAM::IMU::Bias db = mpInt->GetDeltaBias(b);
 
     Eigen::Vector3d dbg;
     dbg << db.bwx, db.bwy, db.bwz;
@@ -869,8 +869,8 @@ void EdgeInertialGS::linearizeOplus()
     const Eigen::Matrix3d Rwb2 = VP2->estimate().Rwb;
     const Eigen::Matrix3d Rwg = VGDir->estimate().Rwg;
     Eigen::MatrixXd Gm = Eigen::MatrixXd::Zero(3,2);
-    Gm(0,1) = -IMU::GRAVITY_VALUE;
-    Gm(1,0) = IMU::GRAVITY_VALUE;
+    Gm(0,1) = -defSLAM::IMU::GRAVITY_VALUE;
+    Gm(1,0) = defSLAM::IMU::GRAVITY_VALUE;
     const double s = VS->estimate();
     const Eigen::MatrixXd dGdTheta = Rwg*Gm;
     const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b));
@@ -997,12 +997,12 @@ Eigen::Matrix3d ExpSO3(const double x, const double y, const double z)
     if(d<1e-5)
     {
         Eigen::Matrix3d res = Eigen::Matrix3d::Identity() + W +0.5*W*W;
-        return Converter::toMatrix3d(IMU::NormalizeRotation(Converter::toCvMat(res)));
+        return Converter::toMatrix3d(defSLAM::IMU::NormalizeRotation(Converter::toCvMat(res)));
     }
     else
     {
         Eigen::Matrix3d res =Eigen::Matrix3d::Identity() + W*sin(d)/d + W*W*(1.0-cos(d))/d2;
-        return Converter::toMatrix3d(IMU::NormalizeRotation(Converter::toCvMat(res)));
+        return Converter::toMatrix3d(defSLAM::IMU::NormalizeRotation(Converter::toCvMat(res)));
     }
 }
 
