@@ -37,6 +37,7 @@
 namespace ORB_SLAM2
 {
   using ORB_SLAM3::GeometricCamera;
+  using defSLAM::IMU::Calib;
 
   class Map;
   class MapPoint;
@@ -269,10 +270,10 @@ public:
     cv::Mat GetImuPose();
     cv::Mat GetVelocity();
 
-    // void SetNewBias(const ORB_SLAM3::IMU::Bias &b);
+    // void SetNewBias(const defSLAM::IMU::Bias &b);
     cv::Mat GetGyroBias();
     cv::Mat GetAccBias();
-    ORB_SLAM3::IMU::Bias GetImuBias();
+    defSLAM::IMU::Bias GetImuBias();
     
     GeometricCamera* mpCamera, *mpCamera2;
 
@@ -294,8 +295,8 @@ public:
     KeyFrame* mPrevKF;
     KeyFrame* mNextKF;
 
-    ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
-    ORB_SLAM3::IMU::Calib mImuCalib;
+    defSLAM::IMU::Preintegrated* mpImuPreintegrated;
+    Calib mImuCalib;
     
 protected:
     // IMU position
@@ -305,7 +306,7 @@ protected:
     cv::Mat Vw;
 
     // Imu bias
-    ORB_SLAM3::IMU::Bias mImuBias;
+    defSLAM::IMU::Bias mImuBias;
   
   };
 
