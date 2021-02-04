@@ -28,9 +28,11 @@
 #include <mutex>
 #include <set>
 #include <vector>
+
+#include "GeometricCamera.h"
+
 namespace ORB_SLAM2
 {
-
   class MapPoint;
   class KeyFrame;
   class Frame;
@@ -82,6 +84,51 @@ namespace ORB_SLAM2
     int mnBigChangeIdx;
 
     std::mutex mMutexMap;
+    
+  // OS3
+  public:
+    std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
+    KeyFrame* mpFirstRegionKF;
+
+    bool mbFail;
+
+    // Size of the thumbnail (always in power of 2)
+    static const int THUMB_WIDTH = 512;
+    static const int THUMB_HEIGHT = 512;
+
+    static long unsigned int nNextId;
+    
+  protected:
+    long unsigned int mnId;
+    
+    std::vector<MapPoint*> mvpBackupMapPoints;
+    std::vector<KeyFrame*> mvpBackupKeyFrames;
+
+    KeyFrame* mpKFinitial;
+    KeyFrame* mpKFlowerID;
+
+    unsigned long int mnBackupKFinitialID;
+    unsigned long int mnBackupKFlowerID;
+
+    bool mbImuInitialized;
+
+    int mnMapChange;
+    int mnMapChangeNotified;
+    
+    long unsigned int mnInitKFid;
+    long unsigned int mnLastLoopKFid;
+    
+    // // View of the map in aerial sight (for the AtlasViewer)
+    // GLubyte* mThumbnail;
+
+    bool mIsInUse;
+    bool mHasTumbnail;
+    bool mbBad = false;
+    
+    bool mbIsInertial;
+    bool mbIMU_BA1;
+    bool mbIMU_BA2;
+    
   };
 
 } // namespace ORB_SLAM2
