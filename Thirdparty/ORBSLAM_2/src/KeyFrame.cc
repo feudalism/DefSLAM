@@ -808,7 +808,7 @@ cv::Mat KeyFrame::GetVelocity()
     return Vw.clone();
 }
 
-// void KeyFrame::SetNewBias(const ORB_SLAM3::IMU::Bias &b)
+// void KeyFrame::SetNewBias(const defSLAM::IMU::Bias &b)
 // {
     // unique_lock<mutex> lock(mMutexPose);
     // mImuBias = b;
@@ -828,7 +828,7 @@ cv::Mat KeyFrame::GetAccBias()
     return (cv::Mat_<float>(3,1) << mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
 
-ORB_SLAM3::IMU::Bias KeyFrame::GetImuBias()
+defSLAM::IMU::Bias KeyFrame::GetImuBias()
 {
     unique_lock<mutex> lock(mMutexPose);
     return mImuBias;
