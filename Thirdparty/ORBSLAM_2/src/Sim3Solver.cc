@@ -32,10 +32,13 @@
 
 namespace ORB_SLAM2
 {
+    
+using ORB_SLAM3::GeometricCamera;
 
 
 Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale):
-    mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale)
+    mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale),
+    pCamera1(pKF1->mpCamera), pCamera2(pKF2->mpCamera)
 {
     mpKF1 = pKF1;
     mpKF2 = pKF2;
@@ -110,6 +113,98 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> 
 
     SetRansacParameters();
 }
+
+// overloaded ctor from OS3
+// Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale,
+                       // vector<KeyFrame*> vpKeyFrameMatchedMP):
+    // mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale),
+    // pCamera1(pKF1->mpCamera), pCamera2(pKF2->mpCamera)
+// {
+    // bool bDifferentKFs = false;
+    // if(vpKeyFrameMatchedMP.empty())
+    // {
+        // bDifferentKFs = true;
+        // vpKeyFrameMatchedMP = vector<KeyFrame*>(vpMatched12.size(), pKF2);
+    // }
+
+    // mpKF1 = pKF1;
+    // mpKF2 = pKF2;
+
+    // vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+
+    // mN1 = vpMatched12.size();
+
+    // mvpMapPoints1.reserve(mN1);
+    // mvpMapPoints2.reserve(mN1);
+    // mvpMatches12 = vpMatched12;
+    // mvnIndices1.reserve(mN1);
+    // mvX3Dc1.reserve(mN1);
+    // mvX3Dc2.reserve(mN1);
+
+    // cv::Mat Rcw1 = pKF1->GetRotation();
+    // cv::Mat tcw1 = pKF1->GetTranslation();
+    // cv::Mat Rcw2 = pKF2->GetRotation();
+    // cv::Mat tcw2 = pKF2->GetTranslation();
+
+    // mvAllIndices.reserve(mN1);
+
+    // size_t idx=0;
+
+    // KeyFrame* pKFm = pKF2; //Default variable
+    // for(int i1=0; i1<mN1; i1++)
+    // {
+        // if(vpMatched12[i1])
+        // {
+            // MapPoint* pMP1 = vpKeyFrameMP1[i1];
+            // MapPoint* pMP2 = vpMatched12[i1];
+
+            // if(!pMP1)
+                // continue;
+
+            // if(pMP1->isBad() || pMP2->isBad())
+                // continue;
+
+            // if(bDifferentKFs)
+                // pKFm = vpKeyFrameMatchedMP[i1];
+
+            // int indexKF1 = get<0>(pMP1->GetIndexInKeyFrame(pKF1));
+            // int indexKF2 = get<0>(pMP2->GetIndexInKeyFrame(pKFm));
+
+            // if(indexKF1<0 || indexKF2<0)
+                // continue;
+
+            // const cv::KeyPoint &kp1 = pKF1->mvKeysUn[indexKF1];
+            // const cv::KeyPoint &kp2 = pKFm->mvKeysUn[indexKF2];
+
+            // const float sigmaSquare1 = pKF1->mvLevelSigma2[kp1.octave];
+            // const float sigmaSquare2 = pKFm->mvLevelSigma2[kp2.octave];
+
+            // mvnMaxError1.push_back(9.210*sigmaSquare1);
+            // mvnMaxError2.push_back(9.210*sigmaSquare2);
+
+            // mvpMapPoints1.push_back(pMP1);
+            // mvpMapPoints2.push_back(pMP2);
+            // mvnIndices1.push_back(i1);
+
+            // cv::Mat X3D1w = pMP1->GetWorldPos();
+            // mvX3Dc1.push_back(Rcw1*X3D1w+tcw1);
+
+            // cv::Mat X3D2w = pMP2->GetWorldPos();
+            // mvX3Dc2.push_back(Rcw2*X3D2w+tcw2);
+
+            // mvAllIndices.push_back(idx);
+            // idx++;
+        // }
+    // }
+
+    // mK1 = pKF1->mK;
+    // mK2 = pKF2->mK;
+
+    // FromCameraToImage(mvX3Dc1,mvP1im1,pCamera1);
+    // FromCameraToImage(mvX3Dc2,mvP2im2,pCamera2);
+
+    // SetRansacParameters();
+// }
 
 void Sim3Solver::SetRansacParameters(double probability, int minInliers, int maxIterations)
 {
@@ -421,5 +516,121 @@ void Sim3Solver::FromCameraToImage(const vector<cv::Mat> &vP3Dc, vector<cv::Mat>
         vP2D.push_back((cv::Mat_<float>(2,1) << fx*x+cx, fy*y+cy));
     }
 }
+
+//OS3
+cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInliers, int &nInliers, bool &bConverge)
+{
+    bNoMore = false;
+    bConverge = false;
+    vbInliers = vector<bool>(mN1,false);
+    nInliers=0;
+
+    if(N<mRansacMinInliers)
+    {
+        bNoMore = true;
+        return cv::Mat();
+    }
+
+    vector<size_t> vAvailableIndices;
+
+    cv::Mat P3Dc1i(3,3,CV_32F);
+    cv::Mat P3Dc2i(3,3,CV_32F);
+
+    int nCurrentIterations = 0;
+
+    cv::Mat bestSim3;
+
+    while(mnIterations<mRansacMaxIts && nCurrentIterations<nIterations)
+    {
+        nCurrentIterations++;
+        mnIterations++;
+
+        vAvailableIndices = mvAllIndices;
+
+        // Get min set of points
+        for(short i = 0; i < 3; ++i)
+        {
+            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+
+            int idx = vAvailableIndices[randi];
+
+            mvX3Dc1[idx].copyTo(P3Dc1i.col(i));
+            mvX3Dc2[idx].copyTo(P3Dc2i.col(i));
+
+            vAvailableIndices[randi] = vAvailableIndices.back();
+            vAvailableIndices.pop_back();
+        }
+
+        ComputeSim3(P3Dc1i,P3Dc2i);
+
+        CheckInliers();
+
+        if(mnInliersi>=mnBestInliers)
+        {
+            mvbBestInliers = mvbInliersi;
+            mnBestInliers = mnInliersi;
+            mBestT12 = mT12i.clone();
+            mBestRotation = mR12i.clone();
+            mBestTranslation = mt12i.clone();
+            mBestScale = ms12i;
+
+            if(mnInliersi>mRansacMinInliers)
+            {
+                nInliers = mnInliersi;
+                for(int i=0; i<N; i++)
+                    if(mvbInliersi[i])
+                        vbInliers[mvnIndices1[i]] = true;
+                bConverge = true;
+                return mBestT12;
+            }
+            else
+            {
+                bestSim3 = mBestT12;
+            }
+        }
+    }
+
+    if(mnIterations>=mRansacMaxIts)
+        bNoMore=true;
+
+    return bestSim3;
+}
+
+void Sim3Solver::Project(const vector<cv::Mat> &vP3Dw, vector<cv::Mat> &vP2D, cv::Mat Tcw, GeometricCamera* pCamera)
+{
+    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+
+    vP2D.clear();
+    vP2D.reserve(vP3Dw.size());
+
+    for(size_t i=0, iend=vP3Dw.size(); i<iend; i++)
+    {
+        cv::Mat P3Dc = Rcw*vP3Dw[i]+tcw;
+        const float invz = 1/(P3Dc.at<float>(2));
+        const float x = P3Dc.at<float>(0);
+        const float y = P3Dc.at<float>(1);
+        const float z = P3Dc.at<float>(2);
+
+        vP2D.push_back(pCamera->projectMat(cv::Point3f(x,y,z)));
+    }
+}
+
+void Sim3Solver::FromCameraToImage(const vector<cv::Mat> &vP3Dc, vector<cv::Mat> &vP2D, GeometricCamera* pCamera)
+{
+    vP2D.clear();
+    vP2D.reserve(vP3Dc.size());
+
+    for(size_t i=0, iend=vP3Dc.size(); i<iend; i++)
+    {
+        const float invz = 1/(vP3Dc[i].at<float>(2));
+        const float x = vP3Dc[i].at<float>(0);
+        const float y = vP3Dc[i].at<float>(1);
+        const float z = vP3Dc[i].at<float>(2);
+
+        vP2D.push_back(pCamera->projectMat(cv::Point3f(x,y,z)));
+    }
+}
+
 
 } //namespace ORB_SLAM
