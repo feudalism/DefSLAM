@@ -26,23 +26,33 @@
 #include <vector>
 
 #include "KeyFrame.h"
+#include "GeometricCamera.h"
 
 
 
 namespace ORB_SLAM2
 {
+    
+using ORB_SLAM3::GeometricCamera;
 
 class Sim3Solver
 {
 public:
 
-    Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2, const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true);
-
+    Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2,
+                const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true);
+    // // overloaded ctor from OS3
+    // Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2,
+                // const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true,
+                // const vector<KeyFrame*> vpKeyFrameMatchedMP = vector<KeyFrame*>());
+               
     void SetRansacParameters(double probability = 0.99, int minInliers = 6 , int maxIterations = 300);
 
     cv::Mat find(std::vector<bool> &vbInliers12, int &nInliers);
 
     cv::Mat iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers);
+    // OS3
+    cv::Mat iterate(int nIterations, bool &bNoMore, vector<bool> &vbInliers, int &nInliers, bool &bConverge);
 
     cv::Mat GetEstimatedRotation();
     cv::Mat GetEstimatedTranslation();
@@ -59,6 +69,10 @@ protected:
 
     void Project(const std::vector<cv::Mat> &vP3Dw, std::vector<cv::Mat> &vP2D, cv::Mat Tcw, cv::Mat K);
     void FromCameraToImage(const std::vector<cv::Mat> &vP3Dc, std::vector<cv::Mat> &vP2D, cv::Mat K);
+    
+    // OS3
+    void Project(const std::vector<cv::Mat> &vP3Dw, std::vector<cv::Mat> &vP2D, cv::Mat Tcw, GeometricCamera* pCamera);
+    void FromCameraToImage(const std::vector<cv::Mat> &vP3Dc, std::vector<cv::Mat> &vP2D, GeometricCamera* pCamera);
 
 
 protected:
@@ -125,6 +139,9 @@ protected:
     // Calibration
     cv::Mat mK1;
     cv::Mat mK2;
+
+    // OS3
+    GeometricCamera* pCamera1, *pCamera2;
 
 };
 
