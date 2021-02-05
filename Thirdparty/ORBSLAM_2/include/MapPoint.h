@@ -121,6 +121,7 @@ namespace ORB_SLAM2
     long unsigned int mnBAGlobalForKF;
 
     static std::mutex mGlobalMutex;
+    
 
   protected:
     // Position in absolute coordinates
@@ -154,6 +155,39 @@ namespace ORB_SLAM2
     std::mutex mMutexPos;
     std::mutex mMutexGTPos;
     std::mutex mMutexFeatures;
+    
+  // OS3
+  public:
+    float mTrackDepth;
+    float mTrackDepthR;
+    float mTrackProjYR;
+    bool mbTrackInViewR;
+    int mnTrackScaleLevelR;
+    float mTrackViewCosR;
+    long unsigned int mnBALocalForMerge;
+
+    // Variable used by merging
+    cv::Mat mPosMerge;
+    cv::Mat mNormalVectorMerge;
+
+
+    // Fopr inverse depth optimization
+    double mInvDepth;
+    double mInitU;
+    double mInitV;
+    KeyFrame* mpHostKF;
+
+    unsigned int mnOriginMapId;
+    
+  protected:
+     // For save relation without pointer, this is necessary for save/load function
+     std::map<long unsigned int, int> mBackupObservationsId1;
+     std::map<long unsigned int, int> mBackupObservationsId2;
+     
+     long unsigned int mBackupRefKFId;
+     
+     // For save relation without pointer, this is necessary for save/load function
+     long long int mBackupReplacedId;
   };
 
 } // namespace ORB_SLAM2
