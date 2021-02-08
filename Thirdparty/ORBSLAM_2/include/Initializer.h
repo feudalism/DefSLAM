@@ -22,10 +22,14 @@
 
 #include<opencv2/opencv.hpp>
 #include "Frame.h"
+#include "GeometricCamera.h"
 
 
 namespace ORB_SLAM2
 {
+    
+using ORB_SLAM3::GeometricCamera;
+    
 // THIS IS THE INITIALIZER FOR MONOCULAR SLAM. NOT USED IN THE STEREO OR RGBD CASE.
 class Initializer
 {
@@ -92,6 +96,8 @@ private:
 
     // Ransac sets
     vector<vector<size_t> > mvSets;   
+
+    GeometricCamera* mpCamera;
 
 };
 
