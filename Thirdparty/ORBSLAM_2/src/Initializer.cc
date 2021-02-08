@@ -27,11 +27,16 @@
 
 #include<thread>
 
+#include "Pinhole.h"
+
 namespace ORB_SLAM2
 {
+    
+using ORB_SLAM3::Pinhole;
 
 Initializer::Initializer(const Frame &ReferenceFrame, float sigma, int iterations)
 {
+    mpCamera = ReferenceFrame.mpCamera;
     mK = ReferenceFrame.mK.clone();
 
     mvKeys1 = ReferenceFrame.mvKeysUn;
@@ -110,6 +115,9 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
 
     // Compute ratio of scores
     float RH = SH/(SH+SF);
+
+    float minParallax = 1.0; // 1.0 originally
+    cv::Mat K = static_cast<Pinhole*>(mpCamera)->toK();
 
     // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
     if(RH>0.40)
@@ -864,12 +872,15 @@ int Initializer::CheckRT(const cv::Mat &R, const cv::Mat &t, const vector<cv::Ke
             continue;
 
         // Check reprojection error in first image
-        float im1x, im1y;
-        float invZ1 = 1.0/p3dC1.at<float>(2);
-        im1x = fx*p3dC1.at<float>(0)*invZ1+cx;
-        im1y = fy*p3dC1.at<float>(1)*invZ1+cy;
-
-        float squareError1 = (im1x-kp1.pt.x)*(im1x-kp1.pt.x)+(im1y-kp1.pt.y)*(im1y-kp1.pt.y);
+        cv::Point2f uv1 = mpCamera->project(p3dC1);
+        float squareError1 = (uv1.x-kp1.pt.x)*(uv1.x-kp1.pt.x)+(uv1.y-kp1.pt.y)*(uv1.y-kp1.pt.y);
+        
+        // old OS2
+        // float im1x, im1y;
+        // float invZ1 = 1.0/p3dC1.at<float>(2);
+        // im1x = fx*p3dC1.at<float>(0)*invZ1+cx;
+        // im1y = fy*p3dC1.at<float>(1)*invZ1+cy;
+        // float squareError1 = (im1x-kp1.pt.x)*(im1x-kp1.pt.x)+(im1y-kp1.pt.y)*(im1y-kp1.pt.y);
 
         if(squareError1>th2)
             continue;
