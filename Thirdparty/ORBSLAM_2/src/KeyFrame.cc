@@ -834,4 +834,11 @@ defSLAM::IMU::Bias KeyFrame::GetImuBias()
     return mImuBias;
 }
 
+Map* KeyFrame::GetMap()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mpMap;
+}
+
+
 } // namespace ORB_SLAM2
