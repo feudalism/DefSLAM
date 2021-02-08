@@ -38,6 +38,7 @@ namespace ORB_SLAM2
 {
   using ORB_SLAM3::GeometricCamera;
   using defSLAM::IMU::Calib;
+  using defSLAM::IMU::Bias;
 
   class Map;
   class MapPoint;
@@ -223,7 +224,6 @@ namespace ORB_SLAM2
     cv::Mat Tcw;
     cv::Mat Twc;
     cv::Mat Ow;
-
     cv::Mat Cw; // Stereo middel point. Only for visualization
 
     // MapPoints associated to keypoints
@@ -276,6 +276,60 @@ public:
     cv::Mat GetGyroBias();
     cv::Mat GetAccBias();
     defSLAM::IMU::Bias GetImuBias();
+
+    bool bImu;
+    
+    //Number of optimizations by BA(amount of iterations in BA)
+    long unsigned int mnNumberOfOpt;
+    
+    // KFDB
+    long unsigned int mnMergeQuery;
+    int mnMergeWords;
+    float mMergeScore;
+    long unsigned int mnPlaceRecognitionQuery;
+    int mnPlaceRecognitionWords;
+    float mPlaceRecognitionScore;
+
+    bool mbCurrentPlaceRecognition;
+    
+    // LC
+    cv::Mat mVwbGBA;
+    cv::Mat mVwbBefGBA;
+    defSLAM::IMU::Bias mBiasGBA;
+
+    // Variables used by merging
+    cv::Mat mTcwMerge;
+    cv::Mat mTcwBefMerge;
+    cv::Mat mTwcBefMerge;
+    cv::Mat mVwbMerge;
+    cv::Mat mVwbBefMerge;
+    defSLAM::IMU::Bias mBiasMerge;
+    long unsigned int mnMergeCorrectedForKF;
+    long unsigned int mnMergeForKF;
+    float mfScaleMerge;
+    long unsigned int mnBALocalForMerge;
+
+    // Calibration
+    float mfScale;
+    cv::Mat mDistCoef;
+
+    // Preintegrated IMU measurements from previous keyframe
+    KeyFrame* mPrevKF;
+    KeyFrame* mNextKF;
+
+    defSLAM::IMU::Preintegrated* mpImuPreintegrated;
+    Calib mImuCalib;
+    unsigned int mnOriginMapId;
+
+    string mNameFile;
+
+    int mnDataset;
+
+    std::vector <KeyFrame*> mvpLoopCandKFs;
+    std::vector <KeyFrame*> mvpMergeCandKFs;
+
+    bool mbHasHessian;
+    cv::Mat mHessianPose;
     
     GeometricCamera* mpCamera, *mpCamera2;
 
@@ -293,12 +347,19 @@ public:
 
     std::vector< std::vector <std::vector<size_t> > > mGridRight;
 
-    // Preintegrated IMU measurements from previous keyframe
-    KeyFrame* mPrevKF;
-    KeyFrame* mNextKF;
+    cv::Mat imgLeft, imgRight; //TODO Backup??
 
-    defSLAM::IMU::Preintegrated* mpImuPreintegrated;
-    Calib mImuCalib;
+    void PrintPointDistribution(){
+        int left = 0, right = 0;
+        int Nlim = (NLeft != -1) ? NLeft : N;
+        for(int i = 0; i < N; i++){
+            if(mvpMapPoints[i]){
+                if(i < Nlim) left++;
+                else right++;
+            }
+        }
+        cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
+    }
     
 protected:
     // IMU position
@@ -310,7 +371,26 @@ protected:
     // Imu bias
     defSLAM::IMU::Bias mImuBias;
     
+    // Spanning Tree and Loop Edges
+    std::set<KeyFrame*> mspMergeEdges;
+    
+    // For save relation without pointer, this is necessary for save/load function
+    std::vector<long long int> mvBackupMapPointsId;
+    std::map<long unsigned int, int> mBackupConnectedKeyFrameIdWeights;
+    long long int mBackupParentId;
+    std::vector<long unsigned int> mvBackupChildrensId;
+    std::vector<long unsigned int> mvBackupLoopEdgesId;
+    std::vector<long unsigned int> mvBackupMergeEdgesId;
+    
     std::mutex mMutexMap;
+
+    // Backup variables for inertial
+    long long int mBackupPrevKFId;
+    long long int mBackupNextKFId;
+    defSLAM::IMU::Preintegrated mBackupImuPreintegrated;
+
+    // Backup for Cameras
+    unsigned int mnBackupIdCamera, mnBackupIdCamera2;
   
   };
 
