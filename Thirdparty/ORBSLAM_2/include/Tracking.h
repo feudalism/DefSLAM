@@ -40,6 +40,9 @@
 #include "Viewer.h"
 #include <mutex>
 
+#include "ImuTypes.h"
+#include "GeometricCamera.h"
+
 namespace defSLAM
 {
   class System;
@@ -106,7 +109,10 @@ namespace ORB_SLAM2
       NO_IMAGES_YET = 0,
       NOT_INITIALIZED = 1,
       OK = 2,
-      LOST = 3
+      // LOST = 3
+      RECENTLY_LOST=3,
+      LOST=4,
+      OK_KLT=5
     };
 
     eTrackingState mState;
@@ -118,7 +124,6 @@ namespace ORB_SLAM2
     // Current Frame
     Frame *mCurrentFrame;
     cv::Mat mImGray;
-
     cv::Mat mImRGB;
 
     // Initialization Variables (Monocular)
@@ -137,11 +142,18 @@ namespace ORB_SLAM2
     list<double> mlFrameTimes;
     list<bool> mlbLost;
 
+    // OS3
+    // frames with estimated pose
+    int mTrackedFr;
+    bool mbStep;
+
     // True if local mapping is deactivated and we are performing only
     // localization
     bool mbOnlyTracking;
 
     void Reset();
+    void ResetActiveMap(bool bLocMap = false); // OS3
+    
     double getRegInex();
     double getRegLap();
     double getRegTemp();
@@ -149,6 +161,20 @@ namespace ORB_SLAM2
     void setRegInex(double);
     void setRegLap(double);
     void setRegTemp(double);
+
+    // OS3
+    float mMeanTrack;
+    bool mbInitWith3KFs;
+    double t0; // time-stamp of first read frame
+    double t0vis; // time-stamp of first inserted keyframe
+    double t0IMU; // time-stamp of IMU initialization
+
+    vector<MapPoint*> GetLocalMapMPS();
+
+    //TEST--
+    bool mbNeedRectify;
+    bool mbWriteStats;
+    cv::Mat mImRight;
 
   protected:
     // Main tracking function. It is independent of the input sensor.
@@ -180,6 +206,31 @@ namespace ORB_SLAM2
     virtual void CreateNewKeyFrame();
 
   protected:
+    // OS3
+    bool mbMapUpdated;
+
+    // Imu preintegration from last frame
+    defSLAM::IMU::Preintegrated *mpImuPreintegratedFromLastKF;
+
+    // Queue of IMU measurements between frames
+    std::list<defSLAM::IMU::Point> mlQueueImuData;
+
+    // Vector of IMU measurements from previous to current frame (to be filled by PreintegrateIMU)
+    std::vector<defSLAM::IMU::Point> mvImuFromLastFrame;
+    std::mutex mMutexImuQueue;
+
+    // Imu calibration parameters
+    defSLAM::IMU::Calib *mpImuCalib;
+
+    // Last Bias Estimation (at keyframe creation)
+    defSLAM::IMU::Bias mLastBias;
+    // /end OS3
+
+    // In case of performing only localization, this flag is true when there are no matches to
+    // points in the map. Still tracking will continue if there are enough matches with temporal points.
+    // In that case we are doing visual odometry. The system will try to do relocalization to recover
+    // "zero-drift" localization to the map.
+    
     // In case of performing only localization, this flag is true when there are
     // no matches to
     // points in the map. Still tracking will continue if there are enough matches
@@ -202,7 +253,8 @@ namespace ORB_SLAM2
 
     // Initalization (only for monocular)
     Initializer *mpInitializer;
-
+    bool mbSetInit; // OS3
+    
     // Local Map
     KeyFrame *mpReferenceKF;
     std::vector<KeyFrame *> mvpLocalKeyFrames;
@@ -215,6 +267,7 @@ namespace ORB_SLAM2
     Viewer *mpViewer;
     FrameDrawer *mpFrameDrawer;
     MapDrawer *mpMapDrawer;
+    bool bStepByStep; // OS3
 
     // Map
     Map *mpMap;
@@ -227,6 +280,10 @@ namespace ORB_SLAM2
     // New KeyFrame rules (according to fps)
     int mMinFrames;
     int mMaxFrames;
+
+    // OS3
+    int mnFirstImuFrameId;
+    int mnFramesToResetIMU;
 
     // Threshold close/far points
     // Points seen as close by the stereo/RGBD sensor are considered reliable
@@ -246,6 +303,15 @@ namespace ORB_SLAM2
     Frame mLastFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
+    
+    // OS3
+    double mTimeStampLost;
+    double time_recently_lost;
+    unsigned int mnFirstFrameId;
+    unsigned int mnInitialFrameId;
+    unsigned int mnLastInitFrameId;
+    bool mbCreatedMap;
+    int mnNumDataset;
 
     // Motion Model
     cv::Mat mVelocity;
@@ -263,6 +329,20 @@ namespace ORB_SLAM2
     bool saveResults;
 
     std::mutex Regmutex;
+
+    // OS3
+    ofstream f_track_stats;
+    ofstream f_track_times;
+    double mTime_PreIntIMU;
+    double mTime_PosePred;
+    double mTime_LocalMapTrack;
+    double mTime_NewKF_Dec;
+
+    ORB_SLAM3::GeometricCamera* mpCamera, *mpCamera2;
+
+    int initID, lastID;
+
+    cv::Mat mTlr;
   };
 
 } // namespace ORB_SLAM2
