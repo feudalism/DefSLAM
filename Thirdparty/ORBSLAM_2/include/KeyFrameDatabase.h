@@ -30,6 +30,7 @@
 #include "ORBVocabulary.h"
 
 #include<mutex>
+#include "Map.h"
 
 
 namespace ORB_SLAM2
@@ -37,6 +38,7 @@ namespace ORB_SLAM2
 
 class KeyFrame;
 class Frame;
+class Map;
 
 
 class KeyFrameDatabase
@@ -67,6 +69,26 @@ protected:
 
   // Mutex
   std::mutex mMutex;
+  
+// OS3
+public:
+   void clearMap(Map* pMap);
+   
+   // Loop and Merge Detection
+   void DetectCandidates(KeyFrame* pKF, float minScore,vector<KeyFrame*>& vpLoopCand, vector<KeyFrame*>& vpMergeCand);
+   void DetectBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &vpLoopCand, vector<KeyFrame*> &vpMergeCand, int nMinWords);
+   void DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &vpLoopCand, vector<KeyFrame*> &vpMergeCand, int nNumCandidates);
+
+   // Relocalization
+   std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F, Map* pMap);
+
+   void PreSave();
+   void PostLoad(map<long unsigned int, KeyFrame*> mpKFid);
+   void SetORBVocabulary(ORBVocabulary* pORBVoc);
+
+protected:
+  // For save relation without pointer, this is necessary for save/load function
+  std::vector<list<long unsigned int> > mvBackupInvertedFileId;
 };
 
 } //namespace ORB_SLAM
