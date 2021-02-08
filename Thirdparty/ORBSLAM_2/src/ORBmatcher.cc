@@ -143,7 +143,8 @@ namespace ORB_SLAM2
   bool ORBmatcher::CheckDistEpipolarLine(const cv::KeyPoint &kp1,
                                          const cv::KeyPoint &kp2,
                                          const cv::Mat &F12,
-                                         const KeyFrame *pKF2)
+                                         const KeyFrame *pKF2,
+                                         const bool b1)
   {
     // Epipolar line in second image l = x1'F12 = [a b c]
     const float a = kp1.pt.x * F12.at<float>(0, 0) +
@@ -162,7 +163,10 @@ namespace ORB_SLAM2
 
     const float dsqr = num * num / den;
 
-    return dsqr < 3.84 * pKF2->mvLevelSigma2[kp2.octave];
+    if(!b1)
+        return dsqr<3.84*pKF2->mvLevelSigma2[kp2.octave];
+    else
+        return dsqr<6.63*pKF2->mvLevelSigma2[kp2.octave];
   }
 
   int ORBmatcher::SearchByBoW(KeyFrame *pKF, Frame &F,
@@ -1705,4 +1709,29 @@ namespace ORB_SLAM2
 
     return dist;
   }
+
+  // OS3
+  bool ORBmatcher::CheckDistEpipolarLine2(const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const cv::Mat &F12, const KeyFrame *pKF2, const float unc)
+  {
+    // Epipolar line in second image l = x1'F12 = [a b c]
+    const float a = kp1.pt.x*F12.at<float>(0,0)+kp1.pt.y*F12.at<float>(1,0)+F12.at<float>(2,0);
+    const float b = kp1.pt.x*F12.at<float>(0,1)+kp1.pt.y*F12.at<float>(1,1)+F12.at<float>(2,1);
+    const float c = kp1.pt.x*F12.at<float>(0,2)+kp1.pt.y*F12.at<float>(1,2)+F12.at<float>(2,2);
+
+    const float num = a*kp2.pt.x+b*kp2.pt.y+c;
+
+    const float den = a*a+b*b;
+
+    if(den==0)
+        return false;
+
+    const float dsqr = num*num/den;
+
+    if(unc==1.f)
+        return dsqr<3.84*pKF2->mvLevelSigma2[kp2.octave];
+    else
+        return dsqr<3.84*pKF2->mvLevelSigma2[kp2.octave]*unc;
+  }
+
+
 } // namespace ORB_SLAM2
