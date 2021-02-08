@@ -270,6 +270,8 @@ public:
     cv::Mat GetImuPose();
     cv::Mat GetVelocity();
 
+    Map* GetMap();
+
     // void SetNewBias(const defSLAM::IMU::Bias &b);
     cv::Mat GetGyroBias();
     cv::Mat GetAccBias();
@@ -307,6 +309,8 @@ protected:
 
     // Imu bias
     defSLAM::IMU::Bias mImuBias;
+    
+    std::mutex mMutexMap;
   
   };
 
