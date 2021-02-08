@@ -87,6 +87,8 @@ namespace ORB_SLAM2
     
   // OS3
   public:
+    bool IsBad();
+    
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
     KeyFrame* mpFirstRegionKF;
 
