@@ -167,4 +167,11 @@ namespace ORB_SLAM2
     }
   }
 
+// OS3
+bool Map::IsBad()
+{
+    return mbBad;
+}
+
+
 } // namespace ORB_SLAM2
