@@ -946,5 +946,10 @@ cv::Mat Frame::GetImuPose()
     return Twb.clone();
 }
   
+void Frame::setIntegrated()
+{
+    unique_lock<std::mutex> lock(*mpMutexImu);
+    mbImuPreintegrated = true;
+}
 
 } // namespace ORB_SLAM2
