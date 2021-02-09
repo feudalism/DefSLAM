@@ -96,6 +96,10 @@ protected:
   void ResetIfRequested();
   bool mbResetRequested;
   std::mutex mMutexReset;
+  
+  // OS3
+  bool mbResetActiveMapRequested;
+  Map* mpMapToReset;
 
   bool CheckFinish();
   void SetFinish();
@@ -129,6 +133,33 @@ protected:
   cv::Mat mScw;
   g2o::Sim3 mg2oScw;
 
+    //------- OS3
+    Map* mpLastMap;
+
+    bool mbLoopDetected;
+    int mnLoopNumCoincidences;
+    int mnLoopNumNotFound;
+    KeyFrame* mpLoopLastCurrentKF;
+    g2o::Sim3 mg2oLoopSlw;
+    g2o::Sim3 mg2oLoopScw;
+    KeyFrame* mpLoopMatchedKF;
+    std::vector<MapPoint*> mvpLoopMPs;
+    std::vector<MapPoint*> mvpLoopMatchedMPs;
+    bool mbMergeDetected;
+    int mnMergeNumCoincidences;
+    int mnMergeNumNotFound;
+    KeyFrame* mpMergeLastCurrentKF;
+    g2o::Sim3 mg2oMergeSlw;
+    g2o::Sim3 mg2oMergeSmw;
+    g2o::Sim3 mg2oMergeScw;
+    KeyFrame* mpMergeMatchedKF;
+    std::vector<MapPoint*> mvpMergeMPs;
+    std::vector<MapPoint*> mvpMergeMatchedMPs;
+    std::vector<KeyFrame*> mvpMergeConnectedKFs;
+
+    g2o::Sim3 mSold_new;
+    //-------
+
   long unsigned int mLastLoopKFid;
 
   // Variables related to Global Bundle Adjustment
@@ -142,6 +173,11 @@ protected:
   bool mbFixScale;
 
   bool mnFullBAIdx;
+
+    // OS3
+    vector<double> vdPR_CurrentTime;
+    vector<double> vdPR_MatchedTime;
+    vector<int> vnPR_TypeRecogn;
 };
 
 } // namespace ORB_SLAM
