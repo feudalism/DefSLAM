@@ -714,5 +714,112 @@ namespace defSLAM
         unique_lock<mutex> lock(mMutexImuQueue);
         mlQueueImuData.push_back(imuMeasurement);
     }
+    
+    void DefTracking::PreintegrateIMU()
+    {
+        if(!mCurrentFrame->mpPrevFrame)
+        {
+            mCurrentFrame->setIntegrated();
+            return;
+        }
+
+        // cout << "start loop. Total meas:" << mlQueueImuData.size() << endl;
+
+        mvImuFromLastFrame.clear();
+        mvImuFromLastFrame.reserve(mlQueueImuData.size());
+        if(mlQueueImuData.size() == 0)
+        {
+            mCurrentFrame->setIntegrated();
+            return;
+        }
+
+        while(true)
+        {
+            bool bSleep = false;
+            {
+                unique_lock<mutex> lock(mMutexImuQueue);
+                if(!mlQueueImuData.empty())
+                {
+                    defSLAM::IMU::Point* m = &mlQueueImuData.front();
+                    cout.precision(17);
+                    if(m->t<mCurrentFrame->mpPrevFrame->mTimeStamp-0.001l)
+                    {
+                        mlQueueImuData.pop_front();
+                    }
+                    else if(m->t<mCurrentFrame->mTimeStamp-0.001l)
+                    {
+                        mvImuFromLastFrame.push_back(*m);
+                        mlQueueImuData.pop_front();
+                    }
+                    else
+                    {
+                        mvImuFromLastFrame.push_back(*m);
+                        break;
+                    }
+                }
+                else
+                {
+                    break;
+                    bSleep = true;
+                }
+            }
+            if(bSleep)
+                usleep(500);
+        }
+
+
+        const int n = mvImuFromLastFrame.size()-1;
+        defSLAM::IMU::Preintegrated* pImuPreintegratedFromLastFrame = new defSLAM::IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
+
+        for(int i=0; i<n; i++)
+        {
+            float tstep;
+            cv::Point3f acc, angVel;
+            if((i==0) && (i<(n-1)))
+            {
+                float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+                float tini = mvImuFromLastFrame[i].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
+                        (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
+                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
+                        (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tini/tab))*0.5f;
+                tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+            }
+            else if(i<(n-1))
+            {
+                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a)*0.5f;
+                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w)*0.5f;
+                tstep = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+            }
+            else if((i>0) && (i==(n-1)))
+            {
+                float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+                float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame->mTimeStamp;
+                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
+                        (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
+                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
+                        (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tend/tab))*0.5f;
+                tstep = mCurrentFrame->mTimeStamp-mvImuFromLastFrame[i].t;
+            }
+            else if((i==0) && (i==(n-1)))
+            {
+                acc = mvImuFromLastFrame[i].a;
+                angVel = mvImuFromLastFrame[i].w;
+                tstep = mCurrentFrame->mTimeStamp-mCurrentFrame->mpPrevFrame->mTimeStamp;
+            }
+
+            if (!mpImuPreintegratedFromLastKF)
+                cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
+            mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
+            pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
+        }
+
+        mCurrentFrame->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+        mCurrentFrame->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+        mCurrentFrame->mpLastKeyFrame = mpLastKeyFrame;
+
+        mCurrentFrame->setIntegrated();
+    }
+
 
 } // namespace defSLAM

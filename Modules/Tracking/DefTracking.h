@@ -103,6 +103,11 @@ namespace defSLAM
     // Update data to last frame.
     void UpdateLastFrame() override;
 
+    // OS3
+    // Perform preintegration from last frame
+    void PreintegrateIMU();
+
+
   protected:
     KeyFrame *keyframe; // main keyframe
     uint LocalZone;
