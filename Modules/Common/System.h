@@ -36,6 +36,8 @@
 #include "Tracking.h"
 #include "Viewer.h"
 
+#include "ImuTypes.h"
+
 namespace ORB_SLAM2
 {
   class FrameDrawer;
@@ -67,9 +69,17 @@ namespace defSLAM
     {
       MONOCULAR = 0,
       STEREO = 1,
-      RGBD = 2
+      RGBD = 2,
+        IMU_MONOCULAR=3,
+        IMU_STEREO=4
     };
 
+    // File type
+    enum eFileType{
+        TEXT_FILE=0,
+        BINARY_FILE=1,
+    };
+    
   public:
     System() = default;
 
@@ -186,6 +196,7 @@ namespace defSLAM
     // Reset flag
     std::mutex mMutexReset;
     bool mbReset;
+    bool mbResetActiveMap; // OS3
 
     // Change mode flags
     std::mutex mMutexMode;
