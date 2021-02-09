@@ -22,10 +22,6 @@
 
 #include <vector>
 
-#include "ImuTypes.h"
-#include "GeometricCamera.h"
-#include "ConstraintPoseImu.h"
-
 #include "MapPoint.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
@@ -36,27 +32,32 @@
 
 #include <mutex>
 
+#include "ImuTypes.h"
+#include "GeometricCamera.h"
+#include "ConstraintPoseImu.h"
+
 namespace ORB_SLAM2
 {
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64
+    
+    class MapPoint;
+    class KeyFrame;
 
     using ORB_SLAM3::GeometricCamera;
     using ORB_SLAM3::ConstraintPoseImu;
     using defSLAM::IMU::Calib;
-    
-    class MapPoint;
-    class KeyFrame;
 
     class Frame
     {
     public:
         Frame();
-        //
-        Frame(const cv::Mat &imGray, const double &timeStamp, const cv::Mat &K, const cv::Mat &Tcw, const cv::Mat &distCoef, const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
-
+        
         // Copy constructor.
         Frame(const Frame &frame);
+        
+        // Constructor given the calibration matrix
+        Frame(const cv::Mat &imGray, const double &timeStamp, const cv::Mat &K, const cv::Mat &Tcw, const cv::Mat &distCoef, const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
 
         // Constructor for stereo cameras.
         Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORB_SLAM2::ORBextractor *extractorLeft, ORB_SLAM2::ORBextractor *extractorRight, ORB_SLAM2::ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
@@ -65,15 +66,20 @@ namespace ORB_SLAM2
         Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORB_SLAM2::ORBextractor *extractor, ORB_SLAM2::ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, cv::Mat _mask = cv::Mat());
 
         // Constructor for Monocular cameras. (OS2; w/o camera)
-        Frame(const cv::Mat &imGray, const double &timeStamp, ORB_SLAM2::ORBextractor *extractor, ORB_SLAM2::ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
+        Frame(const cv::Mat &imGray, const double &timeStamp, ORB_SLAM2::ORBextractor *extractor,
+            ORB_SLAM2::ORBVocabulary *voc,
+            cv::Mat &K,
+            cv::Mat &distCoef, const float &bf, const float &thDepth,
+            const cv::Mat &ImRGB, cv::Mat _mask = cv::Mat());
         //  Frame(const cv::Mat &imGray, const double &timeStamp, ORB_SLAM2::ORBextractor* extractor,ORB_SLAM2::ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth,const cv::Mat &ImRGB, const cv::Mat &ImOut,cv::Mat _mask = cv::Mat());
 
         // Constructor for Monocular cameras (OS3; with camera)
-        Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
-                GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,
-                Frame* pPrevF = static_cast<Frame*>(NULL),
-                const Calib &ImuCalib = Calib());
-                // const Calib &ImuCalib = Calib());
+        Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,
+            ORBVocabulary* voc,
+            GeometricCamera* pCamera, 
+            cv::Mat &distCoef, const float &bf, const float &thDepth,
+            Frame* pPrevF = static_cast<Frame*>(NULL),
+            const Calib &ImuCalib = Calib());
 
         virtual ~Frame();
 

@@ -42,9 +42,12 @@ namespace ORB_SLAM2
   float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
   float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 
-  Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
+  Frame::Frame():
+    mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL),
+    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
   {}
 
+  // Constructor for a given calibration matrix K
   Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const cv::Mat &K,
                const cv::Mat &mTcw, const cv::Mat &distCoef, const cv::Mat &ImRGB,
                cv::Mat _mask)
@@ -98,11 +101,14 @@ namespace ORB_SLAM2
         mvInvLevelSigma2(frame.mvInvLevelSigma2), ImGray(frame.ImGray.clone()),
         _mask(frame._mask.clone())
   {
-    //   cv::imshow("img_last",ImGray);
-
     for (int i = 0; i < FRAME_GRID_COLS; i++)
       for (int j = 0; j < FRAME_GRID_ROWS; j++)
         mGrid[i][j] = frame.mGrid[i][j];
+        
+        // OS3 -- for stereo?
+        if(frame.Nleft > 0){
+            mGridRight[i][j] = frame.mGridRight[i][j];
+        }
 
     if (!frame.mTcw.empty())
       SetPose(frame.mTcw);
