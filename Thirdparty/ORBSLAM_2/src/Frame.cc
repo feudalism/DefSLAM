@@ -103,12 +103,13 @@ namespace ORB_SLAM2
   {
     for (int i = 0; i < FRAME_GRID_COLS; i++)
       for (int j = 0; j < FRAME_GRID_ROWS; j++)
+      {
         mGrid[i][j] = frame.mGrid[i][j];
         
         // OS3 -- for stereo?
-        if(frame.Nleft > 0){
+        if(frame.Nleft > 0)
             mGridRight[i][j] = frame.mGridRight[i][j];
-        }
+      }
 
     if (!frame.mTcw.empty())
       SetPose(frame.mTcw);
