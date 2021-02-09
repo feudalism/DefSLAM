@@ -30,6 +30,13 @@
 #include "MapDrawer.h"
 #include <mutex>
 
+#include "System.h"
+
+
+namespace defSLAM
+{
+  class System;
+}
 
 namespace ORB_SLAM2
 {
@@ -38,6 +45,8 @@ class Tracking;
 class LoopClosing;
 class Map;
 class MapDrawer;
+
+using defSLAM::System;
 
 class LocalMapping
 {
@@ -72,6 +81,38 @@ public:
         return mlNewKeyFrames.size();
     }
 
+    // OS3
+    std::mutex mMutexImuInit;
+
+    Eigen::MatrixXd mcovInertial;
+    Eigen::Matrix3d mRwg;
+    Eigen::Vector3d mbg;
+    Eigen::Vector3d mba;
+    double mScale;
+    double mInitTime;
+    double mCostTime;
+    bool mbNewInit;
+    unsigned int mInitSect;
+    unsigned int mIdxInit;
+    unsigned int mnKFs;
+    double mFirstTs;
+    int mnMatchesInliers;
+
+    // For debugging (erase in normal mode)
+    int mInitFr;
+    int mIdxIteration;
+    string strSequence;
+
+    bool mbNotBA1;
+    bool mbNotBA2;
+    bool mbBadImu;
+
+    bool mbWriteStats;
+
+    // not consider far points (clouds)
+    bool mbFarPoints;
+    float mThFarPoints;
+
 protected:
 
     bool CheckNewKeyFrames();
@@ -80,17 +121,21 @@ protected:
 
     virtual void MapPointCulling();
     virtual void SearchInNeighbors();
-
     virtual void KeyFrameCulling();
 
     cv::Mat ComputeF12(KeyFrame* &pKF1, KeyFrame* &pKF2);
 
+    System *mpSystem; // OS3
+
     cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
 
     bool mbMonocular;
+    bool mbInertial; // OS3
 
     virtual void ResetIfRequested();
     bool mbResetRequested;
+    bool mbResetRequestedActiveMap;
+    Map* mpMapToReset;
     std::mutex mMutexReset;
 
     bool CheckFinish();
@@ -122,6 +167,20 @@ protected:
 
     bool mbAcceptKeyFrames;
     std::mutex mMutexAccept;
+
+    // OS3
+    bool bInitializing;
+
+    Eigen::MatrixXd infoInertial;
+    int mNumLM;
+    int mNumKFCulling;
+
+    float mTinit;
+
+    int countRefinement;
+
+    //DEBUG
+    ofstream f_lm;
 };
 
 } //namespace ORB_SLAM
