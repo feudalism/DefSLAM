@@ -35,6 +35,9 @@
 #include <DefMap.h>
 #include <DefMapDrawer.h>
 #include <set_MAC.h>
+
+#include "ImuTypes.h"
+
 namespace defSLAM
 {
   class DefLocalMapping;
@@ -704,4 +707,12 @@ namespace defSLAM
     mnLastKeyFrameId = mCurrentFrame->mnId;
     mpLastKeyFrame = pKF;
   }
+
+    // OS3
+    void DefTracking::GrabImuData(const defSLAM::IMU::Point &imuMeasurement)
+    {
+        unique_lock<mutex> lock(mMutexImuQueue);
+        mlQueueImuData.push_back(imuMeasurement);
+    }
+
 } // namespace defSLAM

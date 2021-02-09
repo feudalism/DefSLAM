@@ -29,6 +29,8 @@
 #include <mutex>
 #include <opencv2/core/eigen.hpp>
 
+#include "ImuTypes.h"
+
 namespace ORB_SLAM2
 {
   class Tracking;
@@ -56,8 +58,7 @@ namespace defSLAM
                 const string &strSettingPath,
                 const int sensor = ORB_SLAM2::System::MONOCULAR,
                 bool viewerOn = false);
-
-  public:
+                
     //Main function of tracking where the map is considered deformable.
     virtual bool TrackLocalMap();
 
@@ -76,6 +77,8 @@ namespace defSLAM
                                            const cv::Mat &imDepth,
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
+    // OS3
+    void GrabImuData(const IMU::Point &imuMeasurement);
 
   protected:
     // Main function of tracking.
