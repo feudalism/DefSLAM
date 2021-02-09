@@ -106,6 +106,8 @@ namespace defSLAM
     // OS3
     // Perform preintegration from last frame
     void PreintegrateIMU();
+    
+    bool PredictStateIMU();
 
 
   protected:

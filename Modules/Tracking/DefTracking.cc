@@ -821,5 +821,56 @@ namespace defSLAM
         mCurrentFrame->setIntegrated();
     }
 
+    bool DefTracking::PredictStateIMU()
+    {
+        if(!mCurrentFrame->mpPrevFrame)
+            return false;
+
+        if(mbMapUpdated && mpLastKeyFrame)
+        {
+            const cv::Mat twb1 = mpLastKeyFrame->GetImuPosition();
+            const cv::Mat Rwb1 = mpLastKeyFrame->GetImuRotation();
+            const cv::Mat Vwb1 = mpLastKeyFrame->GetVelocity();
+
+            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-IMU::GRAVITY_VALUE);
+            const float t12 = mpImuPreintegratedFromLastKF->dT;
+
+            cv::Mat Rwb2 = IMU::NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
+            cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
+            cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
+            mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+            mCurrentFrame->mPredRwb = Rwb2.clone();
+            mCurrentFrame->mPredtwb = twb2.clone();
+            mCurrentFrame->mPredVwb = Vwb2.clone();
+            mCurrentFrame->mImuBias = mpLastKeyFrame->GetImuBias();
+            mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+            return true;
+        }
+        else if(!mbMapUpdated)
+        {
+            const cv::Mat twb1 = mLastFrame.GetImuPosition();
+            const cv::Mat Rwb1 = mLastFrame.GetImuRotation();
+            const cv::Mat Vwb1 = mLastFrame.mVw;
+            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-IMU::GRAVITY_VALUE);
+            const float t12 = mCurrentFrame->mpImuPreintegratedFrame->dT;
+
+            cv::Mat Rwb2 = IMU::NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
+            cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
+            cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
+
+            mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+            mCurrentFrame->mPredRwb = Rwb2.clone();
+            mCurrentFrame->mPredtwb = twb2.clone();
+            mCurrentFrame->mPredVwb = Vwb2.clone();
+            mCurrentFrame->mImuBias =mLastFrame.mImuBias;
+            mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+            return true;
+        }
+        else
+            cout << "not IMU prediction!!" << endl;
+
+        return false;
+    }
+
 
 } // namespace defSLAM
