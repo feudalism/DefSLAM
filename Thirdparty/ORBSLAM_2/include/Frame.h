@@ -86,6 +86,9 @@ namespace ORB_SLAM2
 
         // Set the camera pose.
         void SetPose(cv::Mat Tcw);
+        
+        // Set IMU pose and velocity (implicitly changes camera pose)
+        void SetImuPoseVelocity(const cv::Mat &Rwb, const cv::Mat &twb, const cv::Mat &Vwb);
 
         // Computes rotation, translation and camera center matrices from the camera pose.
         void UpdatePoseMatrices();

@@ -952,4 +952,15 @@ void Frame::setIntegrated()
     mbImuPreintegrated = true;
 }
 
+void Frame::SetImuPoseVelocity(const cv::Mat &Rwb, const cv::Mat &twb, const cv::Mat &Vwb)
+{
+    mVw = Vwb.clone();
+    cv::Mat Rbw = Rwb.t();
+    cv::Mat tbw = -Rbw*twb;
+    cv::Mat Tbw = cv::Mat::eye(4,4,CV_32F);
+    Rbw.copyTo(Tbw.rowRange(0,3).colRange(0,3));
+    tbw.copyTo(Tbw.rowRange(0,3).col(3));
+    mTcw = mImuCalib.Tcb*Tbw;
+    UpdatePoseMatrices();
+}
 } // namespace ORB_SLAM2
