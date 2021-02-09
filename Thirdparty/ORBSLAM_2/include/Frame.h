@@ -129,6 +129,8 @@ namespace ORB_SLAM2
         cv::Mat GetImuPosition();
         cv::Mat GetImuRotation();
         cv::Mat GetImuPose();
+        
+        void setIntegrated();
 
     public:
         // Vocabulary used for relocalization.
