@@ -435,5 +435,12 @@ namespace ORB_SLAM2
 
     return nScale;
   }
+  
+// OS3
+Map* MapPoint::GetMap()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mpMap;
+}
 
 } // namespace ORB_SLAM2

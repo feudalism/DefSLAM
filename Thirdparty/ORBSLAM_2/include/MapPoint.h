@@ -81,6 +81,8 @@ namespace ORB_SLAM2
     float GetMaxDistanceInvariance();
     int PredictScale(const float &currentDist, KeyFrame *pKF);
     int PredictScale(const float &currentDist, Frame *pF);
+    
+    Map* GetMap();
 
     bool RealPositionKnown;
     Map *mpMap;
