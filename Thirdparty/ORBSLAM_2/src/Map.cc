@@ -25,152 +25,200 @@
 
 namespace ORB_SLAM2
 {
+long unsigned int Map::nNextId=0;
 
-  Map::Map() : mnMaxKFid(0), mnBigChangeIdx(0) {}
+Map::Map() : mnMaxKFid(0), mnBigChangeIdx(0),
+mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
+mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), 
+mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false)
+{
+    mnId=nNextId++;
+    mThumbnail = static_cast<GLubyte*>(NULL);
+}
 
-  void Map::AddKeyFrame(KeyFrame *pKF)
-  {
+Map::Map(int initKFid):
+mnInitKFid(initKFid), mnMaxKFid(initKFid),mnLastLoopKFid(initKFid), mnBigChangeIdx(0), mIsInUse(false),
+mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
+mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false)
+{
+    mnId=nNextId++;
+    mThumbnail = static_cast<GLubyte*>(NULL);
+}
+
+Map::~Map()
+{
+    //TODO: erase all points from memory
+    mspMapPoints.clear();
+
+    //TODO: erase all keyframes from memory
+    mspKeyFrames.clear();
+
+    if(mThumbnail)
+        delete mThumbnail;
+    mThumbnail = static_cast<GLubyte*>(NULL);
+
+    mvpReferenceMapPoints.clear();
+    mvpKeyFrameOrigins.clear();
+}
+
+void Map::AddKeyFrame(KeyFrame *pKF)
+{
     unique_lock<mutex> lock(mMutexMap);
     mspKeyFrames.insert(pKF);
     if (pKF->mnId > mnMaxKFid)
-      mnMaxKFid = pKF->mnId;
-  }
+        mnMaxKFid = pKF->mnId;
+}
 
-  void Map::addMapPoint(MapPoint *pMP)
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    mspMapPoints.insert(pMP);
-  }
+void Map::addMapPoint(MapPoint *pMP)
+{
+unique_lock<mutex> lock(mMutexMap);
+mspMapPoints.insert(pMP);
+}
 
-  void Map::eraseMapPoint(MapPoint *pMP)
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    mspMapPoints.erase(pMP);
+void Map::eraseMapPoint(MapPoint *pMP)
+{
+unique_lock<mutex> lock(mMutexMap);
+mspMapPoints.erase(pMP);
 
-    // TODO: This only erase the pointer.
-    // Delete the MapPoint
-  }
+// TODO: This only erase the pointer.
+// Delete the MapPoint
+}
 
-  void Map::EraseKeyFrame(KeyFrame *pKF)
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    mspKeyFrames.erase(pKF);
+void Map::EraseKeyFrame(KeyFrame *pKF)
+{
+unique_lock<mutex> lock(mMutexMap);
+mspKeyFrames.erase(pKF);
 
-    // TODO: This only erase the pointer.
-    // Delete the MapPoint
-  }
+// TODO: This only erase the pointer.
+// Delete the MapPoint
+}
 
-  void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    mvpReferenceMapPoints = vpMPs;
-  }
+void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
+{
+unique_lock<mutex> lock(mMutexMap);
+mvpReferenceMapPoints = vpMPs;
+}
 
-  void Map::InformNewBigChange()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    mnBigChangeIdx++;
-  }
+void Map::InformNewBigChange()
+{
+unique_lock<mutex> lock(mMutexMap);
+mnBigChangeIdx++;
+}
 
-  int Map::GetLastBigChangeIdx()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return mnBigChangeIdx;
-  }
+int Map::GetLastBigChangeIdx()
+{
+unique_lock<mutex> lock(mMutexMap);
+return mnBigChangeIdx;
+}
 
-  vector<KeyFrame *> Map::GetAllKeyFrames()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return vector<KeyFrame *>(mspKeyFrames.begin(), mspKeyFrames.end());
-  }
+vector<KeyFrame *> Map::GetAllKeyFrames()
+{
+unique_lock<mutex> lock(mMutexMap);
+return vector<KeyFrame *>(mspKeyFrames.begin(), mspKeyFrames.end());
+}
 
-  vector<MapPoint *> Map::GetAllMapPoints()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return vector<MapPoint *>(mspMapPoints.begin(), mspMapPoints.end());
-  }
+vector<MapPoint *> Map::GetAllMapPoints()
+{
+unique_lock<mutex> lock(mMutexMap);
+return vector<MapPoint *>(mspMapPoints.begin(), mspMapPoints.end());
+}
 
-  long unsigned int Map::MapPointsInMap()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return mspMapPoints.size();
-  }
+long unsigned int Map::MapPointsInMap()
+{
+unique_lock<mutex> lock(mMutexMap);
+return mspMapPoints.size();
+}
 
-  long unsigned int Map::KeyFramesInMap()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return mspKeyFrames.size();
-  }
+long unsigned int Map::KeyFramesInMap()
+{
+unique_lock<mutex> lock(mMutexMap);
+return mspKeyFrames.size();
+}
 
-  vector<MapPoint *> Map::GetReferenceMapPoints()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return mvpReferenceMapPoints;
-  }
+vector<MapPoint *> Map::GetReferenceMapPoints()
+{
+unique_lock<mutex> lock(mMutexMap);
+return mvpReferenceMapPoints;
+}
 
-  long unsigned int Map::GetMaxKFid()
-  {
-    unique_lock<mutex> lock(mMutexMap);
-    return mnMaxKFid;
-  }
+long unsigned int Map::GetMaxKFid()
+{
+unique_lock<mutex> lock(mMutexMap);
+return mnMaxKFid;
+}
 
-  void Map::clear()
-  {
-    for (set<MapPoint *>::iterator sit = mspMapPoints.begin(),
-                                   send = mspMapPoints.end();
-         sit != send; sit++)
-      delete *sit;
+void Map::clear()
+{
+for (set<MapPoint *>::iterator sit = mspMapPoints.begin(),
+                               send = mspMapPoints.end();
+     sit != send; sit++)
+  delete *sit;
 
-    for (set<KeyFrame *>::iterator sit = mspKeyFrames.begin(),
-                                   send = mspKeyFrames.end();
-         sit != send; sit++)
-      delete *sit;
+for (set<KeyFrame *>::iterator sit = mspKeyFrames.begin(),
+                               send = mspKeyFrames.end();
+     sit != send; sit++)
+  delete *sit;
 
-    mspMapPoints.clear();
-    mspKeyFrames.clear();
-    mnMaxKFid = 0;
-    mvpReferenceMapPoints.clear();
-    mvpKeyFrameOrigins.clear();
-  }
+mspMapPoints.clear();
+mspKeyFrames.clear();
+mnMaxKFid = 0;
+mvpReferenceMapPoints.clear();
+mvpKeyFrameOrigins.clear();
+}
 
-  void Map::ApplyScale(const float s)
-  {
-    unique_lock<mutex> lock(mMutexMap);
+void Map::ApplyScale(const float s)
+{
+unique_lock<mutex> lock(mMutexMap);
 
-    for (std::set<MapPoint *>::iterator sit = mspMapPoints.begin();
-         sit != mspMapPoints.end(); sit++)
-    {
-      MapPoint *pMP = *sit;
-      pMP->SetWorldPos(s * pMP->GetWorldPos());
-      pMP->UpdateNormalAndDepth();
-    }
-    // Pose actualization:revise
-    for (std::set<KeyFrame *>::iterator sit = mspKeyFrames.begin();
-         sit != mspKeyFrames.end(); sit++)
-    {
-      cv::Mat Tcw_ = (*sit)->GetPose();
-      cv::Mat Twc_ = (*sit)->GetPoseInverse();
+for (std::set<MapPoint *>::iterator sit = mspMapPoints.begin();
+     sit != mspMapPoints.end(); sit++)
+{
+  MapPoint *pMP = *sit;
+  pMP->SetWorldPos(s * pMP->GetWorldPos());
+  pMP->UpdateNormalAndDepth();
+}
+// Pose actualization:revise
+for (std::set<KeyFrame *>::iterator sit = mspKeyFrames.begin();
+     sit != mspKeyFrames.end(); sit++)
+{
+  cv::Mat Tcw_ = (*sit)->GetPose();
+  cv::Mat Twc_ = (*sit)->GetPoseInverse();
 
-      Twc_.rowRange(0, 3).col(3) *= s;
-      Tcw_.rowRange(0, 3).colRange(0, 3) = Twc_.rowRange(0, 3).colRange(0, 3).t();
-      Tcw_.rowRange(0, 3).col(3) =
-          -Tcw_.rowRange(0, 3).colRange(0, 3) * Twc_.rowRange(0, 3).col(3);
-      (*sit)->SetPose(Tcw_);
-    }
-  }
+  Twc_.rowRange(0, 3).col(3) *= s;
+  Tcw_.rowRange(0, 3).colRange(0, 3) = Twc_.rowRange(0, 3).colRange(0, 3).t();
+  Tcw_.rowRange(0, 3).col(3) =
+      -Tcw_.rowRange(0, 3).colRange(0, 3) * Twc_.rowRange(0, 3).col(3);
+  (*sit)->SetPose(Tcw_);
+}
+}
 
-  void Map::cleanTracked()
-  {
-    for (auto &pMP : mspMapPoints)
-    {
-      pMP->assigned = false;
-    }
-  }
+void Map::cleanTracked()
+{
+for (auto &pMP : mspMapPoints)
+{
+  pMP->assigned = false;
+}
+}
 
 // OS3
 bool Map::IsBad()
 {
     return mbBad;
+}
+
+long unsigned int Map::GetId()
+{
+    return mnId;
+}
+
+void Map::SetCurrentMap()
+{
+    mIsInUse = true;
+}
+
+void Map::SetStoredMap()
+{
+    mIsInUse = false;
 }
 
 

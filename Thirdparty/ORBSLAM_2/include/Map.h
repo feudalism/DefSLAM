@@ -30,16 +30,20 @@
 #include <vector>
 
 #include "GeometricCamera.h"
+#include <pangolin/pangolin.h>
 
 namespace ORB_SLAM2
 {
   class MapPoint;
   class KeyFrame;
   class Frame;
+  class Atlas;
+  
   class Map
   {
   public:
     Map();
+    Map(int initKFid);
 
     void AddKeyFrame(KeyFrame *pKF);
     void addMapPoint(MapPoint *pMP);
@@ -57,40 +61,28 @@ namespace ORB_SLAM2
     long unsigned int MapPointsInMap();
     long unsigned KeyFramesInMap();
 
+    long unsigned int GetId();
+
     long unsigned int GetMaxKFid();
     // Set to false all the assigned points
     virtual void cleanTracked();
+    
+    void SetCurrentMap();
+    void SetStoredMap();
+    
+    bool IsBad(); // OS3
 
     virtual void clear();
 
   public:
     std::vector<KeyFrame *> mvpKeyFrameOrigins;
-
+    std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
+    KeyFrame* mpFirstRegionKF;
     std::mutex mMutexMapUpdate;
 
     // This avoid that two points are created simultaneously in separate threads
     // (id conflict)
-    std::mutex mMutexPointCreation;
-
-  protected:
-    std::set<MapPoint *> mspMapPoints;
-    std::set<KeyFrame *> mspKeyFrames;
-
-    std::vector<MapPoint *> mvpReferenceMapPoints;
-
-    long unsigned int mnMaxKFid;
-
-    // Index related to a big change in the map (loop closure, global BA)
-    int mnBigChangeIdx;
-
-    std::mutex mMutexMap;
-    
-  // OS3
-  public:
-    bool IsBad();
-    
-    std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
-    KeyFrame* mpFirstRegionKF;
+    std::mutex mMutexPointCreation;    
 
     bool mbFail;
 
@@ -99,9 +91,12 @@ namespace ORB_SLAM2
     static const int THUMB_HEIGHT = 512;
 
     static long unsigned int nNextId;
-    
+
   protected:
     long unsigned int mnId;
+    
+    std::set<MapPoint *> mspMapPoints;
+    std::set<KeyFrame *> mspKeyFrames;
     
     std::vector<MapPoint*> mvpBackupMapPoints;
     std::vector<KeyFrame*> mvpBackupKeyFrames;
@@ -112,16 +107,23 @@ namespace ORB_SLAM2
     unsigned long int mnBackupKFinitialID;
     unsigned long int mnBackupKFlowerID;
 
+    std::vector<MapPoint *> mvpReferenceMapPoints;
+
     bool mbImuInitialized;
 
     int mnMapChange;
     int mnMapChangeNotified;
     
     long unsigned int mnInitKFid;
+    long unsigned int mnMaxKFid;
     long unsigned int mnLastLoopKFid;
+
+    // Index related to a big change in the map (loop closure, global BA)
+    int mnBigChangeIdx;
     
-    // // View of the map in aerial sight (for the AtlasViewer)
-    // GLubyte* mThumbnail;
+    
+    // View of the map in aerial sight (for the AtlasViewer)
+    GLubyte* mThumbnail;
 
     bool mIsInUse;
     bool mHasTumbnail;
@@ -130,6 +132,8 @@ namespace ORB_SLAM2
     bool mbIsInertial;
     bool mbIMU_BA1;
     bool mbIMU_BA2;
+
+    std::mutex mMutexMap;
     
   };
 
