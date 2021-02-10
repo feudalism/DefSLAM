@@ -27,8 +27,10 @@
 #include "Map.h"
 
 #include <map>
+#include <set>
 #include <mutex>
 #include <opencv2/core/core.hpp>
+
 namespace ORB_SLAM2
 {
 
@@ -51,13 +53,13 @@ namespace ORB_SLAM2
     cv::Mat GetNormal();
     KeyFrame *GetReferenceKeyFrame();
 
-    std::map<KeyFrame *, size_t> GetObservations();
+    std::map<KeyFrame *, std::tuple<int,int>> GetObservations();
     int Observations();
 
     void AddObservation(KeyFrame *pKF, size_t idx);
     void EraseObservation(KeyFrame *pKF);
 
-    int GetIndexInKeyFrame(KeyFrame *pKF);
+    std::tuple<int, int> GetIndexInKeyFrame(KeyFrame *pKF);
     bool IsInKeyFrame(KeyFrame *pKF);
 
     virtual void setBadFlag();
@@ -85,8 +87,8 @@ namespace ORB_SLAM2
     Map* GetMap();
     void UpdateMap(Map* pMap);
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
+    void PreSave(std::set<KeyFrame*>& spKF, std::set<MapPoint*>& spMP);
+    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid);
 
     bool RealPositionKnown;
     Map *mpMap;
@@ -135,7 +137,7 @@ namespace ORB_SLAM2
     cv::Mat x3D;
 
     // Keyframes observing the point and associated index in keyframe
-    std::map<KeyFrame *, size_t> mObservations;
+    std::map<KeyFrame *, std::tuple<int,int>> mObservations;
 
     // Mean viewing direction
     cv::Mat mNormalVector;
@@ -161,6 +163,7 @@ namespace ORB_SLAM2
     std::mutex mMutexPos;
     std::mutex mMutexGTPos;
     std::mutex mMutexFeatures;
+    std::mutex mMutexMap;
     
   // OS3
   public:

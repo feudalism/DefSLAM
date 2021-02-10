@@ -109,9 +109,25 @@ namespace ORB_SLAM2
   void MapPoint::AddObservation(KeyFrame *pKF, size_t idx)
   {
     unique_lock<mutex> lock(mMutexFeatures);
-    if (mObservations.count(pKF))
-      return;
-    mObservations[pKF] = idx;
+    tuple<int,int> indexes;
+
+    if(mObservations.count(pKF)){
+        indexes = mObservations[pKF];
+    }
+    else{
+        indexes = tuple<int,int>(-1,-1);
+    }
+
+    if(pKF -> NLeft != -1 && idx >= pKF -> NLeft){
+        get<1>(indexes) = idx;
+    }
+    else{
+        get<0>(indexes) = idx;
+    }
+    
+    // if (mObservations.count(pKF))
+      // return;
+    mObservations[pKF] = indexes;
 
     if (pKF->mvuRight[idx] >= 0)
       nObs += 2;
@@ -126,11 +142,18 @@ namespace ORB_SLAM2
       unique_lock<mutex> lock(mMutexFeatures);
       if (mObservations.count(pKF))
       {
-        int idx = mObservations[pKF];
-        if (pKF->mvuRight[idx] >= 0)
-          nObs -= 2;
-        else
-          nObs--;
+        tuple<int,int> indexes = mObservations[pKF];
+        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+        if(leftIndex != -1){
+            if(!pKF->mpCamera2 && pKF->mvuRight[leftIndex]>=0)
+                nObs-=2;
+            else
+                nObs--;
+        }
+        if(rightIndex != -1){
+            nObs--;
+        }
 
         mObservations.erase(pKF);
 
@@ -147,7 +170,7 @@ namespace ORB_SLAM2
       setBadFlag();
   }
 
-  map<KeyFrame *, size_t> MapPoint::GetObservations()
+  map<KeyFrame *, std::tuple<int,int>> MapPoint::GetObservations()
   {
     unique_lock<mutex> lock(mMutexFeatures);
     return mObservations;
@@ -161,7 +184,7 @@ namespace ORB_SLAM2
 
   void MapPoint::setBadFlag()
   {
-    map<KeyFrame *, size_t> obs;
+    map<KeyFrame *, std::tuple<int,int>> obs;
     {
       unique_lock<mutex> lock1(mMutexFeatures);
       unique_lock<mutex> lock2(mMutexPos);
@@ -169,11 +192,17 @@ namespace ORB_SLAM2
       obs = mObservations;
       mObservations.clear();
     }
-    for (map<KeyFrame *, size_t>::iterator mit = obs.begin(), mend = obs.end();
+    for (map<KeyFrame *, std::tuple<int,int>>::iterator mit = obs.begin(), mend = obs.end();
          mit != mend; mit++)
     {
-      KeyFrame *pKF = mit->first;
-      pKF->EraseMapPointMatch(mit->second);
+        KeyFrame *pKF = mit->first;
+        int leftIndex = get<0>(mit -> second), rightIndex = get<1>(mit -> second);
+        if(leftIndex != -1){
+            pKF->EraseMapPointMatch(leftIndex);
+        }
+        if(rightIndex != -1){
+            pKF->EraseMapPointMatch(rightIndex);
+        }
     }
 
     mpMap->eraseMapPoint(this);
@@ -192,7 +221,7 @@ namespace ORB_SLAM2
       return;
 
     int nvisible, nfound;
-    map<KeyFrame *, size_t> obs;
+    map<KeyFrame *, std::tuple<int,int>> obs;
     {
       unique_lock<mutex> lock1(mMutexFeatures);
       unique_lock<mutex> lock2(mMutexPos);
@@ -204,22 +233,37 @@ namespace ORB_SLAM2
       mpReplaced = pMP;
     }
 
-    for (map<KeyFrame *, size_t>::iterator mit = obs.begin(), mend = obs.end();
+    for (map<KeyFrame *, std::tuple<int, int>>::iterator mit = obs.begin(), mend = obs.end();
          mit != mend; mit++)
     {
-      // Replace measurement in keyframe
-      KeyFrame *pKF = mit->first;
+        // Replace measurement in keyframe
+        KeyFrame *pKF = mit->first;
 
-      if (!pMP->IsInKeyFrame(pKF))
-      {
-        pKF->ReplaceMapPointMatch(mit->second, pMP);
-        pMP->AddObservation(pKF, mit->second);
-      }
-      else
-      {
-        pKF->EraseMapPointMatch(mit->second);
-      }
+        tuple<int,int> indexes = mit -> second;
+        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+        if(!pMP->IsInKeyFrame(pKF))
+        {
+            if(leftIndex != -1){
+                pKF->ReplaceMapPointMatch(leftIndex, pMP);
+                pMP->AddObservation(pKF,leftIndex);
+            }
+            if(rightIndex != -1){
+                pKF->ReplaceMapPointMatch(rightIndex, pMP);
+                pMP->AddObservation(pKF,rightIndex);
+            }
+        }
+        else
+        {
+            if(leftIndex != -1){
+                pKF->EraseMapPointMatch(leftIndex);
+            }
+            if(rightIndex != -1){
+                pKF->EraseMapPointMatch(rightIndex);
+            }
+        }
     }
+    
     pMP->IncreaseFound(nfound);
     pMP->IncreaseVisible(nvisible);
     pMP->ComputeDistinctiveDescriptors();
@@ -259,7 +303,7 @@ namespace ORB_SLAM2
     // Retrieve all observed descriptors
     vector<cv::Mat> vDescriptors;
 
-    map<KeyFrame *, size_t> observations;
+    map<KeyFrame *, std::tuple<int,int>> observations;
 
     {
       unique_lock<mutex> lock1(mMutexFeatures);
@@ -273,14 +317,23 @@ namespace ORB_SLAM2
 
     vDescriptors.reserve(observations.size());
 
-    for (map<KeyFrame *, size_t>::iterator mit = observations.begin(),
+    for (map<KeyFrame *, std::tuple<int, int>>::iterator mit = observations.begin(),
                                            mend = observations.end();
          mit != mend; mit++)
     {
-      KeyFrame *pKF = mit->first;
+        KeyFrame *pKF = mit->first;
 
-      if (!pKF->isBad())
-        vDescriptors.push_back(pKF->mDescriptors.row(mit->second));
+        if (!pKF->isBad()){
+            tuple<int,int> indexes = mit -> second;
+            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+            if(leftIndex != -1){
+                vDescriptors.push_back(pKF->mDescriptors.row(leftIndex));
+            }
+            if(rightIndex != -1){
+                vDescriptors.push_back(pKF->mDescriptors.row(rightIndex));
+            }
+        }
     }
 
     if (vDescriptors.empty())
@@ -330,13 +383,13 @@ namespace ORB_SLAM2
     return mDescriptor.clone();
   }
 
-  int MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
+  std::tuple<int, int> MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
   {
     unique_lock<mutex> lock(mMutexFeatures);
     if (mObservations.count(pKF))
       return mObservations[pKF];
     else
-      return -1;
+      return tuple<int,int>(-1,-1);
   }
 
   bool MapPoint::IsInKeyFrame(KeyFrame *pKF)
@@ -347,7 +400,7 @@ namespace ORB_SLAM2
 
   void MapPoint::UpdateNormalAndDepth()
   {
-    map<KeyFrame *, size_t> observations;
+    map<KeyFrame *, std::tuple<int,int>> observations;
     KeyFrame *pRefKF;
     cv::Mat Pos;
     {
@@ -365,20 +418,46 @@ namespace ORB_SLAM2
 
     cv::Mat normal = cv::Mat::zeros(3, 1, CV_32F);
     int n = 0;
-    for (map<KeyFrame *, size_t>::iterator mit = observations.begin(),
+    for (map<KeyFrame *, std::tuple<int, int>>::iterator mit = observations.begin(),
                                            mend = observations.end();
          mit != mend; mit++)
     {
-      KeyFrame *pKF = mit->first;
-      cv::Mat Owi = pKF->GetCameraCenter();
-      cv::Mat normali = mWorldPos - Owi;
-      normal = normal + normali / cv::norm(normali);
-      n++;
+        KeyFrame *pKF = mit->first;
+
+        tuple<int,int> indexes = mit -> second;
+        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+        if(leftIndex != -1){
+            cv::Mat Owi = pKF->GetCameraCenter();
+            cv::Mat normali = mWorldPos - Owi;
+            normal = normal + normali/cv::norm(normali);
+            n++;
+        }
+        if(rightIndex != -1){
+            cv::Mat Owi = pKF->GetRightCameraCenter();
+            cv::Mat normali = mWorldPos - Owi;
+            normal = normal + normali/cv::norm(normali);
+            n++;
+        }
     }
 
     cv::Mat PC = Pos.clone() - pRefKF->GetCameraCenter().clone();
     const float dist = cv::norm(PC);
-    const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
+    
+    // level
+    tuple<int ,int> indexes = observations[pRefKF];
+    int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    int level;
+    if(pRefKF -> NLeft == -1){
+        level = pRefKF->mvKeysUn[leftIndex].octave;
+    }
+    else if(leftIndex != -1){
+        level = pRefKF -> mvKeys[leftIndex].octave;
+    }
+    else{
+        level = pRefKF -> mvKeysRight[rightIndex - pRefKF -> NLeft].octave;
+    }
+
     const float levelScaleFactor = pRefKF->mvScaleFactors[level];
     const int nLevels = pRefKF->mnScaleLevels;
 
