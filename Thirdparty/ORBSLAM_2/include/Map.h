@@ -44,6 +44,7 @@ namespace ORB_SLAM2
   public:
     Map();
     Map(int initKFid);
+    ~Map();
 
     void AddKeyFrame(KeyFrame *pKF);
     void addMapPoint(MapPoint *pMP);
@@ -70,9 +71,19 @@ namespace ORB_SLAM2
     void SetCurrentMap();
     void SetStoredMap();
     
+    void SetBad();
     bool IsBad(); // OS3
 
     virtual void clear();
+
+    void SetImuInitialized();
+    bool isImuInitialized();
+    
+    void SetInertialSensor();
+    bool IsInertial();
+    
+    void PreSave(std::set<GeometricCamera*> &spCams);
+    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc, map<long unsigned int, KeyFrame*>& mpKeyFrameId, map<unsigned int, GeometricCamera*> &mpCams);
 
   public:
     std::vector<KeyFrame *> mvpKeyFrameOrigins;
