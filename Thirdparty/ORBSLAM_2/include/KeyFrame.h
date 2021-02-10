@@ -126,12 +126,13 @@ namespace ORB_SLAM2
 
     static bool weightComp(int a, int b) { return a > b; }
 
-    static bool lId(KeyFrame *pKF1, KeyFrame *pKF2)
-    {
+    static bool lId(KeyFrame *pKF1, KeyFrame *pKF2) {
       return pKF1->mnId < pKF2->mnId;
     }
 
     cv::Mat getIm();
+    Map* GetMap();
+    void UpdateMap(Map* pMap);
 
     void SaveKeyframe(string);
     void SavePose(string);
@@ -142,6 +143,15 @@ namespace ORB_SLAM2
     // The following variables are accesed from only 1 thread or never change
     // (no
     // mutex needed).
+    
+    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP, set<GeometricCamera*>& spCam);
+    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid,
+        std::map<long unsigned int, MapPoint*>& mpMPid, std::map<unsigned int, GeometricCamera*>& mpCamId);
+        
+    void SetORBVocabulary(ORBVocabulary* pORBVoc);
+    void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
+
+
   public:
     static long unsigned int nNextId;
     long unsigned int mnId;
@@ -269,8 +279,6 @@ public:
     cv::Mat GetImuRotation();
     cv::Mat GetImuPose();
     cv::Mat GetVelocity();
-
-    Map* GetMap();
 
     // void SetNewBias(const defSLAM::IMU::Bias &b);
     cv::Mat GetGyroBias();
