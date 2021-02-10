@@ -32,12 +32,19 @@
 #include "GeometricCamera.h"
 #include <pangolin/pangolin.h>
 
+namespace ORB_SLAM3
+{
+    class GeometricCamera;
+}
+
 namespace ORB_SLAM2
 {
   class MapPoint;
   class KeyFrame;
   class Frame;
   class Atlas;
+  
+  using ORB_SLAM3::GeometricCamera;
   
   class Map
   {
@@ -83,7 +90,7 @@ namespace ORB_SLAM2
     bool IsInertial();
     
     void PreSave(std::set<GeometricCamera*> &spCams);
-    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc, map<long unsigned int, KeyFrame*>& mpKeyFrameId, map<unsigned int, GeometricCamera*> &mpCams);
+    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId, std::map<unsigned int, GeometricCamera*> &mpCams);
 
   public:
     std::vector<KeyFrame *> mvpKeyFrameOrigins;
