@@ -83,6 +83,10 @@ namespace ORB_SLAM2
     int PredictScale(const float &currentDist, Frame *pF);
     
     Map* GetMap();
+    void UpdateMap(Map* pMap);
+
+    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
+    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
 
     bool RealPositionKnown;
     Map *mpMap;
