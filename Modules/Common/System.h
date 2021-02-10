@@ -37,6 +37,7 @@
 #include "Viewer.h"
 
 #include "ImuTypes.h"
+#include "Atlas.h"
 
 namespace ORB_SLAM2
 {
@@ -86,6 +87,10 @@ namespace defSLAM
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and
     // Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const bool bUseViewer = true);
+    
+    // OS3: Initialize the SLAM system.
+    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true, const int initFr = 0, const string &strSequence = std::string(), const string &strLoadingFile = std::string());
+
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to
