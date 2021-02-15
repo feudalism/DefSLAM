@@ -347,13 +347,13 @@ namespace ORB_SLAM2
       if (pMP->isBad())
         continue;
 
-      map<KeyFrame *, size_t> observations = pMP->GetObservations();
+      map<KeyFrame *, tuple<int,int>> observations = pMP->GetObservations();
 
-      for (map<KeyFrame *, size_t>::iterator mit = observations.begin(),
+      for (map<KeyFrame *, tuple<int,int>>::iterator mit = observations.begin(),
                                              mend = observations.end();
            mit != mend; mit++)
       {
-        if (mit->first->mnId == mnId)
+        if (mit->first->mnId == mnId || mit->first->isBad() || mit->first->GetMap() != mpMap)
           continue;
         KFcounter[mit->first]++;
       }
@@ -368,7 +368,7 @@ namespace ORB_SLAM2
     // counter
     int nmax = 0;
     KeyFrame *pKFmax = static_cast<KeyFrame *>(nullptr);
-    int th = 100;
+    int th = 100; // 15 in OS3
 
     vector<pair<int, KeyFrame *>> vPairs;
     vPairs.reserve(KFcounter.size());
