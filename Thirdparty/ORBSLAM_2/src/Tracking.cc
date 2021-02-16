@@ -1948,4 +1948,83 @@ namespace ORB_SLAM2
         return mnMatchesInliers;
     }
 
+
+void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
+{
+    Map * pMap = pCurrentKeyFrame->GetMap();
+    unsigned int index = mnFirstFrameId;
+    list<ORB_SLAM3::KeyFrame*>::iterator lRit = mlpReferences.begin();
+    list<bool>::iterator lbL = mlbLost.begin();
+    for(list<cv::Mat>::iterator lit=mlRelativeFramePoses.begin(),lend=mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lbL++)
+    {
+        if(*lbL)
+            continue;
+
+        KeyFrame* pKF = *lRit;
+
+        while(pKF->isBad())
+        {
+            pKF = pKF->GetParent();
+        }
+
+        if(pKF->GetMap() == pMap)
+        {
+            (*lit).rowRange(0,3).col(3)=(*lit).rowRange(0,3).col(3)*s;
+        }
+    }
+
+    mLastBias = b;
+
+    mpLastKeyFrame = pCurrentKeyFrame;
+
+    mLastFrame.SetNewBias(mLastBias);
+    mCurrentFrame.SetNewBias(mLastBias);
+
+    cv::Mat Gz = (cv::Mat_<float>(3,1) << 0, 0, -IMU::GRAVITY_VALUE);
+
+    cv::Mat twb1;
+    cv::Mat Rwb1;
+    cv::Mat Vwb1;
+    float t12;
+
+    while(!mCurrentFrame.imuIsPreintegrated())
+    {
+        usleep(500);
+    }
+
+
+    if(mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId)
+    {
+        mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(),
+                                      mLastFrame.mpLastKeyFrame->GetImuPosition(),
+                                      mLastFrame.mpLastKeyFrame->GetVelocity());
+    }
+    else
+    {
+        twb1 = mLastFrame.mpLastKeyFrame->GetImuPosition();
+        Rwb1 = mLastFrame.mpLastKeyFrame->GetImuRotation();
+        Vwb1 = mLastFrame.mpLastKeyFrame->GetVelocity();
+        t12 = mLastFrame.mpImuPreintegrated->dT;
+
+        mLastFrame.SetImuPoseVelocity(Rwb1*mLastFrame.mpImuPreintegrated->GetUpdatedDeltaRotation(),
+                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mLastFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
+                                      Vwb1 + Gz*t12 + Rwb1*mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+    }
+
+    if (mCurrentFrame.mpImuPreintegrated)
+    {
+        twb1 = mCurrentFrame.mpLastKeyFrame->GetImuPosition();
+        Rwb1 = mCurrentFrame.mpLastKeyFrame->GetImuRotation();
+        Vwb1 = mCurrentFrame.mpLastKeyFrame->GetVelocity();
+        t12 = mCurrentFrame.mpImuPreintegrated->dT;
+
+        mCurrentFrame.SetImuPoseVelocity(Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaRotation(),
+                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
+                                      Vwb1 + Gz*t12 + Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+    }
+
+    mnFirstImuFrameId = mCurrentFrame.mnId;
+}
+
+
 } // namespace ORB_SLAM2

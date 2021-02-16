@@ -99,6 +99,12 @@ namespace ORB_SLAM2
     // to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
+    void UpdateFrameIMU(const float s, const defSLAM::IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
+    KeyFrame* GetLastKeyFrame()
+    {
+        return mpLastKeyFrame;
+    }
+
     virtual void UpdatekeyPointsanddist();
     
     int GetMatchesInliers();
