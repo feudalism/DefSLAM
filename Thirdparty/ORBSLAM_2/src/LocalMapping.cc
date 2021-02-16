@@ -943,4 +943,256 @@ namespace ORB_SLAM2
     return mbFinished;
   }
 
+
+// OS3
+void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
+{
+    if (mbResetRequested)
+        return;
+
+    float minTime;
+    int nMinKF;
+    if (mbMonocular)
+    {
+        minTime = 2.0;
+        nMinKF = 10;
+    }
+    else
+    {
+        minTime = 1.0;
+        nMinKF = 10;
+    }
+
+
+    if(mpAtlas->KeyFramesInMap()<nMinKF)
+        return;
+
+    // Retrieve all keyframe in temporal order
+    list<KeyFrame*> lpKF;
+    KeyFrame* pKF = mpCurrentKeyFrame;
+    while(pKF->mPrevKF)
+    {
+        lpKF.push_front(pKF);
+        pKF = pKF->mPrevKF;
+    }
+    lpKF.push_front(pKF);
+    vector<KeyFrame*> vpKF(lpKF.begin(),lpKF.end());
+
+    if(vpKF.size()<nMinKF)
+        return;
+
+    mFirstTs=vpKF.front()->mTimeStamp;
+    if(mpCurrentKeyFrame->mTimeStamp-mFirstTs<minTime)
+        return;
+
+    bInitializing = true;
+
+    while(CheckNewKeyFrames())
+    {
+        ProcessNewKeyFrame();
+        vpKF.push_back(mpCurrentKeyFrame);
+        lpKF.push_back(mpCurrentKeyFrame);
+    }
+
+    const int N = vpKF.size();
+    defSLAM::IMU::Bias b(0,0,0,0,0,0);
+
+    // Compute and KF velocities mRwg estimation
+    if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
+    {
+        cv::Mat cvRwg;
+        cv::Mat dirG = cv::Mat::zeros(3,1,CV_32F);
+        for(vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF!=vpKF.end(); itKF++)
+        {
+            if (!(*itKF)->mpImuPreintegrated)
+                continue;
+            if (!(*itKF)->mPrevKF)
+                continue;
+
+            dirG -= (*itKF)->mPrevKF->GetImuRotation()*(*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+            cv::Mat _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->mpImuPreintegrated->dT;
+            (*itKF)->SetVelocity(_vel);
+            (*itKF)->mPrevKF->SetVelocity(_vel);
+        }
+
+        dirG = dirG/cv::norm(dirG);
+        cv::Mat gI = (cv::Mat_<float>(3,1) << 0.0f, 0.0f, -1.0f);
+        cv::Mat v = gI.cross(dirG);
+        const float nv = cv::norm(v);
+        const float cosg = gI.dot(dirG);
+        const float ang = acos(cosg);
+        cv::Mat vzg = v*ang/nv;
+        cvRwg = defSLAM::IMU::ExpSO3(vzg);
+        mRwg = Converter::toMatrix3d(cvRwg);
+        mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
+    }
+    else
+    {
+        mRwg = Eigen::Matrix3d::Identity();
+        mbg = Converter::toVector3d(mpCurrentKeyFrame->GetGyroBias());
+        mba = Converter::toVector3d(mpCurrentKeyFrame->GetAccBias());
+    }
+
+    mScale=1.0;
+
+    mInitTime = mpTracker->mLastFrame.mTimeStamp-vpKF.front()->mTimeStamp;
+
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+    /*cout << "scale after inertial-only optimization: " << mScale << endl;
+    cout << "bg after inertial-only optimization: " << mbg << endl;
+    cout << "ba after inertial-only optimization: " << mba << endl;*/
+
+
+    if (mScale<1e-1)
+    {
+        cout << "scale too small" << endl;
+        bInitializing=false;
+        return;
+    }
+
+
+
+    // Before this line we are not changing the map
+
+    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    if ((fabs(mScale-1.f)>0.00001)||!mbMonocular)
+    {
+        mpAtlas->GetCurrentMap()->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
+        mpTracker->UpdateFrameIMU(mScale,vpKF[0]->GetImuBias(),mpCurrentKeyFrame);
+    }
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+
+    // Check if initialization OK
+    if (!mpAtlas->isImuInitialized())
+        for(int i=0;i<N;i++)
+        {
+            KeyFrame* pKF2 = vpKF[i];
+            pKF2->bImu = true;
+        }
+
+    /*cout << "Before GIBA: " << endl;
+    cout << "ba: " << mpCurrentKeyFrame->GetAccBias() << endl;
+    cout << "bg: " << mpCurrentKeyFrame->GetGyroBias() << endl;*/
+
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    if (bFIBA)
+    {
+        if (priorA!=0.f)
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, true, priorG, priorA);
+        else
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false);
+    }
+
+    std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
+
+    // If initialization is OK
+    mpTracker->UpdateFrameIMU(1.0,vpKF[0]->GetImuBias(),mpCurrentKeyFrame);
+    if (!mpAtlas->isImuInitialized())
+    {
+        cout << "IMU in Map " << mpAtlas->GetCurrentMap()->GetId() << " is initialized" << endl;
+        mpAtlas->SetImuInitialized();
+        mpTracker->t0IMU = mpTracker->mCurrentFrame->mTimeStamp;
+        mpCurrentKeyFrame->bImu = true;
+    }
+
+
+    mbNewInit=true;
+    mnKFs=vpKF.size();
+    mIdxInit++;
+
+    for(list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend=mlNewKeyFrames.end(); lit!=lend; lit++)
+    {
+        (*lit)->setBadFlag();
+        delete *lit;
+    }
+    mlNewKeyFrames.clear();
+
+    mpTracker->mState=Tracking::OK;
+    bInitializing = false;
+
+
+    /*cout << "After GIBA: " << endl;
+    cout << "ba: " << mpCurrentKeyFrame->GetAccBias() << endl;
+    cout << "bg: " << mpCurrentKeyFrame->GetGyroBias() << endl;
+    double t_inertial_only = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0).count();
+    double t_update = std::chrono::duration_cast<std::chrono::duration<double> >(t3 - t2).count();
+    double t_viba = std::chrono::duration_cast<std::chrono::duration<double> >(t5 - t4).count();
+    cout << t_inertial_only << ", " << t_update << ", " << t_viba << endl;*/
+
+    mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
+
+    return;
+}
+
+void LocalMapping::ScaleRefinement()
+{
+    // Minimum number of keyframes to compute a solution
+    // Minimum time (seconds) between first and last keyframe to compute a solution. Make the difference between monocular and stereo
+    // unique_lock<mutex> lock0(mMutexImuInit);
+    if (mbResetRequested)
+        return;
+
+    // Retrieve all keyframes in temporal order
+    list<KeyFrame*> lpKF;
+    KeyFrame* pKF = mpCurrentKeyFrame;
+    while(pKF->mPrevKF)
+    {
+        lpKF.push_front(pKF);
+        pKF = pKF->mPrevKF;
+    }
+    lpKF.push_front(pKF);
+    vector<KeyFrame*> vpKF(lpKF.begin(),lpKF.end());
+
+    while(CheckNewKeyFrames())
+    {
+        ProcessNewKeyFrame();
+        vpKF.push_back(mpCurrentKeyFrame);
+        lpKF.push_back(mpCurrentKeyFrame);
+    }
+
+    const int N = vpKF.size();
+
+    mRwg = Eigen::Matrix3d::Identity();
+    mScale=1.0;
+
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale);
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+    if (mScale<1e-1) // 1e-1
+    {
+        cout << "scale too small" << endl;
+        bInitializing=false;
+        return;
+    }
+
+    // Before this line we are not changing the map
+    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    if ((fabs(mScale-1.f)>0.00001)||!mbMonocular)
+    {
+        mpAtlas->GetCurrentMap()->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
+        mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
+    }
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+
+    for(list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend=mlNewKeyFrames.end(); lit!=lend; lit++)
+    {
+        (*lit)->setBadFlag();
+        delete *lit;
+    }
+    mlNewKeyFrames.clear();
+
+    double t_inertial_only = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0).count();
+
+    // To perform pose-inertial opt w.r.t. last keyframe
+    mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
+
+    return;
+}
+
 } // namespace ORB_SLAM2
