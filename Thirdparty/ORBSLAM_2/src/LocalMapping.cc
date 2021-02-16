@@ -27,8 +27,11 @@
 #include <mutex>
 #include <unistd.h>
 
+
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::Atlas;
+
   LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas,
         const float bMonocular, bool bInertial, const string &_strSeqName)
     : mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), bInitializing(false),
@@ -266,7 +269,7 @@ namespace ORB_SLAM2
     mpCurrentKeyFrame->UpdateConnections();
 
     // Insert Keyframe in Map
-    mpMap->AddKeyFrame(mpCurrentKeyFrame);
+    mpAtlas->AddKeyFrame(mpCurrentKeyFrame);
   }
 
   void LocalMapping::MapPointCulling()
@@ -535,7 +538,7 @@ namespace ORB_SLAM2
           continue;
 
         // Triangulation is succesfull
-        MapPoint *pMP = new defSLAM::DefMapPoint(x3D, mpCurrentKeyFrame, mpMap);
+        MapPoint *pMP = new defSLAM::DefMapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
 
         pMP->AddObservation(mpCurrentKeyFrame, idx1);
         pMP->AddObservation(pKF2, idx2);
@@ -547,7 +550,7 @@ namespace ORB_SLAM2
 
         pMP->UpdateNormalAndDepth();
 
-        mpMap->addMapPoint(pMP);
+        mpAtlas->AddMapPoint(pMP);
         mlpRecentAddedMapPoints.push_back(pMP);
 
         nnew++;
@@ -816,7 +819,7 @@ namespace ORB_SLAM2
                       continue;
                       
                     tuple<int,int> indexes = mit->second;
-                    int leftIndex = get<0>(indexes)
+                    int leftIndex = get<0>(indexes);
                     const int &scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
 
                     if (scaleLeveli <= scaleLevel + 1)
