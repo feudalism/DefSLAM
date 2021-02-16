@@ -1942,5 +1942,10 @@ namespace ORB_SLAM2
     std::unique_lock<std::mutex> m(Regmutex);
     RegTemp = newregTemp;
   }
+  
+    int Tracking::GetMatchesInliers()
+    {
+        return mnMatchesInliers;
+    }
 
 } // namespace ORB_SLAM2

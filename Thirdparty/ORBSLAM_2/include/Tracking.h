@@ -100,6 +100,8 @@ namespace ORB_SLAM2
     void InformOnlyTracking(const bool &flag);
 
     virtual void UpdatekeyPointsanddist();
+    
+    int GetMatchesInliers();
 
   public:
     // Tracking states
