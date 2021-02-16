@@ -255,9 +255,12 @@ namespace ORB_SLAM2
 
   void KeyFrame::EraseMapPointMatch(MapPoint *pMP)
   {
-    int idx = pMP->GetIndexInKeyFrame(this);
-    if (idx >= 0)
-      mvpMapPoints[idx] = static_cast<MapPoint *>(nullptr);
+    std::tuple<size_t,size_t> indexes = pMP->GetIndexInKeyFrame(this);
+    size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    if(leftIndex != -1)
+        mvpMapPoints[leftIndex]=static_cast<MapPoint*>(NULL);
+    if(rightIndex != -1)
+        mvpMapPoints[rightIndex]=static_cast<MapPoint*>(NULL);
   }
 
   void KeyFrame::ReplaceMapPointMatch(const size_t &idx, MapPoint *pMP)
