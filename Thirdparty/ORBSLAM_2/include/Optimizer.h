@@ -38,7 +38,7 @@ namespace ORB_SLAM2
 
     namespace Optimizer
     {
-        // public:
+     public:
         void BundleAdjustment(const std::vector<KeyFrame *> &vpKF,
                               const std::vector<MapPoint *> &vpMP, int nIterations = 5,
                               bool *pbStopFlag = NULL, const unsigned long nLoopKF = 0,
@@ -63,6 +63,11 @@ namespace ORB_SLAM2
         int OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2,
                          std::vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12,
                          const float th2, const bool bFixScale);
+                         
+         // inertial systems
+        void static LocalInertialBA(KeyFrame* pKF, bool *pbStopFlag, Map *pMap,
+                bool bLarge = false, bool bRecInit = false);
+
     } // namespace Optimizer
 
 } // namespace ORB_SLAM2
