@@ -36,6 +36,7 @@
 namespace ORB_SLAM3
 {
     class GeometricCamera;
+    class Atlas;
 }
 
 namespace ORB_SLAM2
@@ -43,9 +44,9 @@ namespace ORB_SLAM2
   class MapPoint;
   class KeyFrame;
   class Frame;
-  class Atlas;
   class KeyFrameDatabase;
   
+  using ORB_SLAM3::Atlas;
   using ORB_SLAM3::GeometricCamera;
   
   class Map
@@ -73,6 +74,7 @@ namespace ORB_SLAM2
 
     long unsigned int GetId();
 
+    long unsigned int GetInitKFid();
     long unsigned int GetMaxKFid();
     // Set to false all the assigned points
     virtual void cleanTracked();
@@ -90,6 +92,10 @@ namespace ORB_SLAM2
     
     void SetInertialSensor();
     bool IsInertial();
+    void SetInertialBA1();
+    void SetInertialBA2();
+    bool GetInertialBA1();
+    bool GetInertialBA2();
     
     void PreSave(std::set<GeometricCamera*> &spCams);
     void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId, std::map<unsigned int, GeometricCamera*> &mpCams);

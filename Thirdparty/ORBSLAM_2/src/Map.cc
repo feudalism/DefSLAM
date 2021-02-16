@@ -238,6 +238,32 @@ bool Map::IsInertial()
     return mbIsInertial;
 }
 
+void Map::SetInertialBA1()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mbIMU_BA1 = true;
+}
+
+void Map::SetInertialBA2()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mbIMU_BA2 = true;
+}
+
+bool Map::GetInertialBA1()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mbIMU_BA1;
+}
+
+bool Map::GetInertialBA2()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mbIMU_BA2;
+}
+
+
+
 void Map::SetImuInitialized()
 {
     unique_lock<mutex> lock(mMutexMap);
@@ -354,5 +380,10 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc, map<long uns
     mvpBackupMapPoints.clear();
 }
 
+long unsigned int Map::GetInitKFid()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mnInitKFid;
+}
 
 } // namespace ORB_SLAM2
