@@ -1099,7 +1099,7 @@ namespace ORB_SLAM2
       const int id1 = 2 * i + 1;
       const int id2 = 2 * (i + 1);
 
-      const int i2 = pMP2->GetIndexInKeyFrame(pKF2);
+      const int i2 = get<0>(pMP2->GetIndexInKeyFrame(pKF2));
 
       if (pMP1 && pMP2)
       {
