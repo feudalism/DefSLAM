@@ -67,6 +67,13 @@ namespace ORB_SLAM2
          // inertial systems
         void static LocalInertialBA(KeyFrame* pKF, bool *pbStopFlag, Map *pMap,
                 bool bLarge = false, bool bRecInit = false);
+                
+        // Inertial pose-graph
+        void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bMono, Eigen::MatrixXd  &covInertial, bool bFixedVel=false, bool bGauss=false, float priorG = 1e2, float priorA = 1e6);
+        void static InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
+        void static InertialOptimization(vector<KeyFrame*> vpKFs, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
+        void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
+
 
     }; // namespace Optimizer
 
