@@ -142,7 +142,7 @@ namespace ORB_SLAM2
         else // stereo?
         {
           Eigen::Matrix<double, 3, 1> obs;
-          const float kp_ur = pKF->mvuRight[mit->second];
+          const float kp_ur = pKF->mvuRight[get<0>(mit->second)];
           obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
           g2o::EdgeStereoSE3ProjectXYZ *e = new g2o::EdgeStereoSE3ProjectXYZ();
