@@ -47,6 +47,9 @@ namespace ORB_SLAM2
                                     bool *pbStopFlag = NULL,
                                     const unsigned long nLoopKF = 0,
                                     const bool bRobust = true);
+        void static FullInertialBA(Map *pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
+
+
         void LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
 
         int poseOptimization(Frame *pFrame);
