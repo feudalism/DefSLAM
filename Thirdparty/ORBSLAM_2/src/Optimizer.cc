@@ -96,11 +96,11 @@ namespace ORB_SLAM2
       vPoint->setMarginalized(true);
       optimizer.addVertex(vPoint);
 
-      const map<KeyFrame *, size_t> observations = pMP->GetObservations();
+      const map<KeyFrame *, std::tuple<int, int>> observations = pMP->GetObservations();
 
       int nEdges = 0;
       //SET EDGES
-      for (map<KeyFrame *, size_t>::const_iterator mit = observations.begin(); mit != observations.end(); mit++)
+      for (map<KeyFrame *, std::tuple<int, int>>::const_iterator mit = observations.begin(); mit != observations.end(); mit++)
       {
 
         KeyFrame *pKF = mit->first;
@@ -109,9 +109,10 @@ namespace ORB_SLAM2
 
         nEdges++;
 
-        const cv::KeyPoint &kpUn = pKF->mvKeysUn[mit->second];
+        const int leftIndex = get<0>(mit->second);
+        const cv::KeyPoint &kpUn = pKF->mvKeysUn[leftIndex];
 
-        if (pKF->mvuRight[mit->second] < 0)
+        if(leftIndex != -1 && pKF->mvuRight[get<0>(mit->second)]<0)
         {
           Eigen::Matrix<double, 2, 1> obs;
           obs << kpUn.pt.x, kpUn.pt.y;
@@ -138,7 +139,7 @@ namespace ORB_SLAM2
 
           optimizer.addEdge(e);
         }
-        else
+        else // stereo?
         {
           Eigen::Matrix<double, 3, 1> obs;
           const float kp_ur = pKF->mvuRight[mit->second];
@@ -483,8 +484,8 @@ namespace ORB_SLAM2
     list<KeyFrame *> lFixedCameras;
     for (list<MapPoint *>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++)
     {
-      map<KeyFrame *, size_t> observations = (*lit)->GetObservations();
-      for (map<KeyFrame *, size_t>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
+      map<KeyFrame *, std::tuple<int, int>> observations = (*lit)->GetObservations();
+      for (map<KeyFrame *, std::tuple<int, int>>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
       {
         KeyFrame *pKFi = mit->first;
 
@@ -573,19 +574,20 @@ namespace ORB_SLAM2
       vPoint->setMarginalized(true);
       optimizer.addVertex(vPoint);
 
-      const map<KeyFrame *, size_t> observations = pMP->GetObservations();
+      const map<KeyFrame *, std::tuple<int, int>> observations = pMP->GetObservations();
 
       //Set edges
-      for (map<KeyFrame *, size_t>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
+      for (map<KeyFrame *, std::tuple<int, int>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
       {
         KeyFrame *pKFi = mit->first;
 
         if (!pKFi->isBad())
         {
-          const cv::KeyPoint &kpUn = pKFi->mvKeysUn[mit->second];
+          const int leftIndex = get<0>(mit->second);
+          const cv::KeyPoint &kpUn = pKFi->mvKeysUn[leftIndex];
 
           // Monocular observation
-          if (pKFi->mvuRight[mit->second] < 0)
+          if (pKFi->mvuRight[get<0>(mit->second)] < 0)
           {
             Eigen::Matrix<double, 2, 1> obs;
             obs << kpUn.pt.x, kpUn.pt.y;
