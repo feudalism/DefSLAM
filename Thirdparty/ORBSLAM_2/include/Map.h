@@ -86,9 +86,13 @@ namespace ORB_SLAM2
     bool IsBad(); // OS3
 
     virtual void clear();
+    
+    void IncreaseChangeIndex();
 
     void SetImuInitialized();
     bool isImuInitialized();
+    
+    void ApplyScaledRotation(const cv::Mat &R, const float s, const bool bScaledVel=false, const cv::Mat t=cv::Mat::zeros(cv::Size(1,3),CV_32F));
     
     void SetInertialSensor();
     bool IsInertial();

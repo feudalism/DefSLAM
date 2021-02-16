@@ -386,4 +386,51 @@ long unsigned int Map::GetInitKFid()
     return mnInitKFid;
 }
 
+void Map::ApplyScaledRotation(const cv::Mat &R, const float s, const bool bScaledVel, const cv::Mat t)
+{
+    unique_lock<mutex> lock(mMutexMap);
+
+    // Body position (IMU) of first keyframe is fixed to (0,0,0)
+    cv::Mat Txw = cv::Mat::eye(4,4,CV_32F);
+    R.copyTo(Txw.rowRange(0,3).colRange(0,3));
+
+    cv::Mat Tyx = cv::Mat::eye(4,4,CV_32F);
+
+    cv::Mat Tyw = Tyx*Txw;
+    Tyw.rowRange(0,3).col(3) = Tyw.rowRange(0,3).col(3)+t;
+    cv::Mat Ryw = Tyw.rowRange(0,3).colRange(0,3);
+    cv::Mat tyw = Tyw.rowRange(0,3).col(3);
+
+    for(set<KeyFrame*>::iterator sit=mspKeyFrames.begin(); sit!=mspKeyFrames.end(); sit++)
+    {
+        KeyFrame* pKF = *sit;
+        cv::Mat Twc = pKF->GetPoseInverse();
+        Twc.rowRange(0,3).col(3)*=s;
+        cv::Mat Tyc = Tyw*Twc;
+        cv::Mat Tcy = cv::Mat::eye(4,4,CV_32F);
+        Tcy.rowRange(0,3).colRange(0,3) = Tyc.rowRange(0,3).colRange(0,3).t();
+        Tcy.rowRange(0,3).col(3) = -Tcy.rowRange(0,3).colRange(0,3)*Tyc.rowRange(0,3).col(3);
+        pKF->SetPose(Tcy);
+        cv::Mat Vw = pKF->GetVelocity();
+        if(!bScaledVel)
+            pKF->SetVelocity(Ryw*Vw);
+        else
+            pKF->SetVelocity(Ryw*Vw*s);
+
+    }
+    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
+    {
+        MapPoint* pMP = *sit;
+        pMP->SetWorldPos(s*Ryw*pMP->GetWorldPos()+tyw);
+        pMP->UpdateNormalAndDepth();
+    }
+    mnMapChange++;
+}
+
+void Map::IncreaseChangeIndex()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mnMapChange++;
+}
+
 } // namespace ORB_SLAM2
