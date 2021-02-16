@@ -1167,7 +1167,7 @@ namespace ORB_SLAM2
       if (pMP)
       {
         vbAlreadyMatched1[i] = true;
-        int idx2 = pMP->GetIndexInKeyFrame(pKF2);
+        int idx2 = get<0>(pMP->GetIndexInKeyFrame(pKF2));
         if (idx2 >= 0 && idx2 < N2)
           vbAlreadyMatched2[idx2] = true;
       }

@@ -68,7 +68,7 @@ namespace defSLAM
       double x[2];
 
       KeyFrame *refKF = mapPoint->GetReferenceKeyFrame();
-      size_t idx = mapPoint->GetIndexInKeyFrame(refKF);
+      size_t idx = get<0>(mapPoint->GetIndexInKeyFrame(refKF));
       if (idx < 0)
         continue;
 

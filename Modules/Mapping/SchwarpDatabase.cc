@@ -96,8 +96,8 @@ namespace defSLAM
         if (mapPoint->IsInKeyFrame(mpCurrentKeyFrame) &&
             (mapPoint->IsInKeyFrame(refkf)))
         {
-          const int idx1 = mapPoint->GetIndexInKeyFrame(refkf);
-          const int idx2 = mapPoint->GetIndexInKeyFrame(mpCurrentKeyFrame);
+          const int idx1 = get<0>(mapPoint->GetIndexInKeyFrame(refkf));
+          const int idx2 = get<0>(mapPoint->GetIndexInKeyFrame(mpCurrentKeyFrame));
           vMatchedIndices.push_back({idx1, idx2});
         }
       }

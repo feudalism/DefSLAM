@@ -75,7 +75,7 @@ namespace defSLAM
   /// Delete map point.
   void DefMapPoint::setBadFlag()
   {
-    map<KeyFrame *, size_t> obs;
+    map<KeyFrame *, std::tuple<int, int>> obs;
     {
       unique_lock<mutex> lock1(mMutexFeatures);
       unique_lock<mutex> lock2(mMutexPos);
@@ -83,11 +83,11 @@ namespace defSLAM
       obs = mObservations;
       mObservations.clear();
     }
-    for (map<KeyFrame *, size_t>::iterator mit = obs.begin(), mend = obs.end();
+    for (map<KeyFrame *, std::tuple<int, int>>::iterator mit = obs.begin(), mend = obs.end();
          mit != mend; mit++)
     {
       KeyFrame *pKF = mit->first;
-      pKF->EraseMapPointMatch(mit->second);
+      pKF->EraseMapPointMatch(get<0>(mit->second));
     }
 
     mpMap->eraseMapPoint(this);

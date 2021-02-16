@@ -1514,8 +1514,8 @@ namespace ORB_SLAM2
         MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
         if (!pMP->isBad())
         {
-          const map<KeyFrame *, size_t> observations = pMP->GetObservations();
-          for (map<KeyFrame *, size_t>::const_iterator it = observations.begin(),
+          const map<KeyFrame *, std::tuple<int, int>> observations = pMP->GetObservations();
+          for (map<KeyFrame *, std::tuple<int, int>>::const_iterator it = observations.begin(),
                                                        itend = observations.end();
                it != itend; it++)
             keyframeCounter[it->first]++;
@@ -1949,7 +1949,7 @@ namespace ORB_SLAM2
     }
 
 
-void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
+void Tracking::UpdateFrameIMU(const float s, const defSLAM::IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
 {
     Map * pMap = pCurrentKeyFrame->GetMap();
     unsigned int index = mnFirstFrameId;
@@ -1978,16 +1978,16 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
     mpLastKeyFrame = pCurrentKeyFrame;
 
     mLastFrame.SetNewBias(mLastBias);
-    mCurrentFrame.SetNewBias(mLastBias);
+    mCurrentFrame->SetNewBias(mLastBias);
 
-    cv::Mat Gz = (cv::Mat_<float>(3,1) << 0, 0, -IMU::GRAVITY_VALUE);
+    cv::Mat Gz = (cv::Mat_<float>(3,1) << 0, 0, -defSLAM::IMU::GRAVITY_VALUE);
 
     cv::Mat twb1;
     cv::Mat Rwb1;
     cv::Mat Vwb1;
     float t12;
 
-    while(!mCurrentFrame.imuIsPreintegrated())
+    while(!mCurrentFrame->imuIsPreintegrated())
     {
         usleep(500);
     }
@@ -2011,19 +2011,19 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
                                       Vwb1 + Gz*t12 + Rwb1*mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
     }
 
-    if (mCurrentFrame.mpImuPreintegrated)
+    if (mCurrentFrame->mpImuPreintegrated)
     {
-        twb1 = mCurrentFrame.mpLastKeyFrame->GetImuPosition();
-        Rwb1 = mCurrentFrame.mpLastKeyFrame->GetImuRotation();
-        Vwb1 = mCurrentFrame.mpLastKeyFrame->GetVelocity();
-        t12 = mCurrentFrame.mpImuPreintegrated->dT;
+        twb1 = mCurrentFrame->mpLastKeyFrame->GetImuPosition();
+        Rwb1 = mCurrentFrame->mpLastKeyFrame->GetImuRotation();
+        Vwb1 = mCurrentFrame->mpLastKeyFrame->GetVelocity();
+        t12 = mCurrentFrame->mpImuPreintegrated->dT;
 
-        mCurrentFrame.SetImuPoseVelocity(Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaRotation(),
-                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
-                                      Vwb1 + Gz*t12 + Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+        mCurrentFrame->SetImuPoseVelocity(Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaRotation(),
+                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
+                                      Vwb1 + Gz*t12 + Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
     }
 
-    mnFirstImuFrameId = mCurrentFrame.mnId;
+    mnFirstImuFrameId = mCurrentFrame->mnId;
 }
 
 
