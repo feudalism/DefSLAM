@@ -811,13 +811,13 @@ cv::Mat KeyFrame::GetVelocity()
     return Vw.clone();
 }
 
-// void KeyFrame::SetNewBias(const defSLAM::IMU::Bias &b)
-// {
-    // unique_lock<mutex> lock(mMutexPose);
-    // mImuBias = b;
-    // if(mpImuPreintegrated)
-        // mpImuPreintegrated->SetNewBias(b);
-// }
+void KeyFrame::SetNewBias(const defSLAM::IMU::Bias &b)
+{
+    unique_lock<mutex> lock(mMutexPose);
+    mImuBias = b;
+    if(mpImuPreintegrated)
+        mpImuPreintegrated->SetNewBias(b);
+}
 
 cv::Mat KeyFrame::GetGyroBias()
 {
@@ -929,7 +929,8 @@ void KeyFrame::PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP, set<GeometricC
     //cout << "KeyFrame: Imu Preintegrated stored" << endl;
 }
 
-void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid, map<unsigned int, GeometricCamera*>& mpCamId){
+void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid, map<unsigned int, GeometricCamera*>& mpCamId)
+{
     // Rebuild the empty variables
 
     // Pose
@@ -1014,25 +1015,34 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsi
     //ComputeSceneMedianDepth();
 }
 
-void KeyFrame::SetORBVocabulary(ORBVocabulary* pORBVoc)
-{
-    mpORBvocabulary = pORBVoc;
+    void KeyFrame::SetORBVocabulary(ORBVocabulary* pORBVoc)
+    {
+        mpORBvocabulary = pORBVoc;
+    }
+
+    void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
+    {
+        mpKeyFrameDB = pKFDB;
+    }
+
+    cv::Mat KeyFrame::GetRightCameraCenter()
+    {
+        unique_lock<mutex> lock(mMutexPose);
+        cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
+        cv::Mat tlr = mTlr.rowRange(0,3).col(3);
+        cv::Mat twl = Ow.clone();
+
+        cv::Mat twr = Rwl * tlr + twl;
+
+        return twr.clone();
+    }
+
+    void KeyFrame::SetVelocity(const cv::Mat &Vw_)
+    {
+        unique_lock<mutex> lock(mMutexPose);
+        Vw_.copyTo(Vw);
+    }
 }
 
-void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
-{
-    mpKeyFrameDB = pKFDB;
-}
 
-cv::Mat KeyFrame::GetRightCameraCenter() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
-    cv::Mat tlr = mTlr.rowRange(0,3).col(3);
-    cv::Mat twl = Ow.clone();
-
-    cv::Mat twr = Rwl * tlr + twl;
-
-    return twr.clone();
-}
-
-} // namespace ORB_SLAM2
+// namespace ORB_SLAM2

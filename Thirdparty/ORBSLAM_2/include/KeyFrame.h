@@ -57,6 +57,8 @@ namespace ORB_SLAM2
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
+    void SetVelocity(const cv::Mat &Vw_);
+    
     cv::Mat GetPose();
     cv::Mat GetPoseInverse();
     cv::Mat GetCameraCenter();
@@ -280,7 +282,7 @@ public:
     cv::Mat GetImuPose();
     cv::Mat GetVelocity();
 
-    // void SetNewBias(const defSLAM::IMU::Bias &b);
+    void SetNewBias(const defSLAM::IMU::Bias &b);
     cv::Mat GetGyroBias();
     cv::Mat GetAccBias();
     defSLAM::IMU::Bias GetImuBias();
