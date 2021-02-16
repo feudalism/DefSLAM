@@ -125,6 +125,8 @@ namespace ORB_SLAM2
 
     // Current Frame
     Frame *mCurrentFrame;
+    Frame mLastFrame;
+    
     cv::Mat mImGray;
     cv::Mat mImRGB;
 
@@ -302,7 +304,6 @@ namespace ORB_SLAM2
 
     // Last Frame, KeyFrame and Relocalisation Info
     KeyFrame *mpLastKeyFrame;
-    Frame mLastFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
     
