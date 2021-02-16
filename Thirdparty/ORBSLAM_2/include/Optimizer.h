@@ -49,13 +49,18 @@ namespace ORB_SLAM2
                                     const bool bRobust = true);
         void static FullInertialBA(Map *pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
 
+        void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, vector<KeyFrame*> &vpNonEnoughOptKFs);
+        void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF);
+        // Local BA in welding area when two maps are merged
+        void static LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdjustKF, vector<KeyFrame*> vpFixedKF, bool *pbStopFlag);
+
 
         void LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
 
         int poseOptimization(Frame *pFrame);
 
         // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
-        void OptimizeEssentialGraph(
+        void static OptimizeEssentialGraph(
             Map *pMap, KeyFrame *pLoopKF, KeyFrame *pCurKF,
             const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
             const LoopClosing::KeyFrameAndPose &CorrectedSim3,
