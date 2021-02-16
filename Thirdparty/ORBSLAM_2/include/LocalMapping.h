@@ -31,11 +31,16 @@
 #include <mutex>
 
 #include "System.h"
-
+#include "Atlas.h"
 
 namespace defSLAM
 {
   class System;
+}
+
+namespace ORB_SLAM3
+{
+  class Atlas;
 }
 
 namespace ORB_SLAM2
@@ -51,7 +56,9 @@ using defSLAM::System;
 class LocalMapping
 {
 public:
-    LocalMapping(Map* pMap, MapDrawer* mpDrawer,const float bMonocular);
+    // LocalMapping(Map* pMap, MapDrawer* mpDrawer,const float bMonocular);
+    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -144,7 +151,7 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Map* mpMap;
+    Atlas* mpAtlas;
 
     LoopClosing* mpLoopCloser;
     Tracking* mpTracker;
