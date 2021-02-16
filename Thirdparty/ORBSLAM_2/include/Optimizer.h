@@ -30,6 +30,7 @@
 
 #include "Thirdparty/g2o/g2o/core/sparse_optimizer.h"
 #include "Thirdparty/g2o/g2o/types/sim3.h"
+#include "Thirdparty/g2o/g2o/core/optimization_algorithm_gauss_newton.h"
 
 namespace ORB_SLAM2
 {
@@ -57,7 +58,7 @@ namespace ORB_SLAM2
 
         void LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, Map *pMap);
 
-        int poseOptimization(Frame *pFrame);
+        static int poseOptimization(Frame *pFrame);
 
         // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
         void static OptimizeEssentialGraph(

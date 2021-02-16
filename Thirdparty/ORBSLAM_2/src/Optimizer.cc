@@ -32,12 +32,30 @@
 
 #include "Converter.h"
 #include "Verbose.h"
+#include "G2oTypes.h"
+#include "OptimizableTypes.h"
 
 #include <mutex>
 
 namespace ORB_SLAM2
 {
   using ORB_SLAM3::Verbose;
+  using ORB_SLAM3::VertexPose;
+  using ORB_SLAM3::VertexVelocity;
+  using ORB_SLAM3::VertexGyroBias;
+  using ORB_SLAM3::VertexAccBias;
+  using ORB_SLAM3::VertexScale;
+  using ORB_SLAM3::VertexGDir;
+  
+  using ORB_SLAM3::EdgeInertial;
+  using ORB_SLAM3::EdgeGyroRW;
+  using ORB_SLAM3::EdgeAccRW;
+  using ORB_SLAM3::EdgeMono;
+  using ORB_SLAM3::EdgeStereo;
+  using ORB_SLAM3::EdgePriorAcc;
+  using ORB_SLAM3::EdgePriorGyro;
+  using ORB_SLAM3::EdgeInertialGS;
+  using ORB_SLAM3::EdgeGyroRW;
 
   void Optimizer::GlobalBundleAdjustemnt(Map *pMap, int nIterations, bool *pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
   {
@@ -1807,9 +1825,9 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, bool
             pKFi->SetVelocity(Converter::toCvMat(VV->estimate()));
             VertexGyroBias* VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid+3*(pKFi->mnId)+2));
             VertexAccBias* VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid+3*(pKFi->mnId)+3));
-            Vector6d b;
+            ORB_SLAM3::Vector6d b;
             b << VG->estimate(), VA->estimate();
-            pKFi->SetNewBias(IMU::Bias(b[3],b[4],b[5],b[0],b[1],b[2]));
+            pKFi->SetNewBias(defSLAM::IMU::Bias(b[3],b[4],b[5],b[0],b[1],b[2]));
 
         }
     }
@@ -1999,14 +2017,14 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     // Biases
     VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid*2+2));
     VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid*2+3));
-    Vector6d vb;
+    ORB_SLAM3::Vector6d vb;
     vb << VG->estimate(), VA->estimate();
     bg << VG->estimate();
     ba << VA->estimate();
     scale = VS->estimate();
 
 
-    IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
+    defSLAM::IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
     Rwg = VGDir->estimate().Rwg;
 
     cv::Mat cvbg = Converter::toCvMat(bg);
@@ -2169,12 +2187,12 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vect
     // Biases
     VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid*2+2));
     VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid*2+3));
-    Vector6d vb;
+    ORB_SLAM3::Vector6d vb;
     vb << VG->estimate(), VA->estimate();
     bg << VG->estimate();
     ba << VA->estimate();
 
-    IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
+    defSLAM::IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
 
     cv::Mat cvbg = Converter::toCvMat(bg);
 
@@ -2330,12 +2348,12 @@ void Optimizer::InertialOptimization(vector<KeyFrame*> vpKFs, Eigen::Vector3d &b
     // Biases
     VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid*2+2));
     VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid*2+3));
-    Vector6d vb;
+    ORB_SLAM3::Vector6d vb;
     vb << VG->estimate(), VA->estimate();
     bg << VG->estimate();
     ba << VA->estimate();
 
-    IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
+    defSLAM::IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
 
     cv::Mat cvbg = Converter::toCvMat(bg);
 
@@ -2858,9 +2876,9 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
                 VA = static_cast<VertexAccBias*>(optimizer.vertex(4*maxKFid+3));
             }
 
-            Vector6d vb;
+            ORB_SLAM3::Vector6d vb;
             vb << VG->estimate(), VA->estimate();
-            IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
+            defSLAM::IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
             if(nLoopId==0)
             {
                 pKFi->SetNewBias(b);
