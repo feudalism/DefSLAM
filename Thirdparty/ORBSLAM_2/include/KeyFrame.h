@@ -354,6 +354,8 @@ public:
     const int NLeft, NRight;
 
     std::vector< std::vector <std::vector<size_t> > > mGridRight;
+    
+    cv::Mat GetRightCameraCenter();
 
     cv::Mat imgLeft, imgRight; //TODO Backup??
 

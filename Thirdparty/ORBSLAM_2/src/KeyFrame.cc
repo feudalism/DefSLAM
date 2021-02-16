@@ -1021,4 +1021,15 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
     mpKeyFrameDB = pKFDB;
 }
 
+cv::Mat KeyFrame::GetRightCameraCenter() {
+    unique_lock<mutex> lock(mMutexPose);
+    cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
+    cv::Mat tlr = mTlr.rowRange(0,3).col(3);
+    cv::Mat twl = Ow.clone();
+
+    cv::Mat twr = Rwl * tlr + twl;
+
+    return twr.clone();
+}
+
 } // namespace ORB_SLAM2
