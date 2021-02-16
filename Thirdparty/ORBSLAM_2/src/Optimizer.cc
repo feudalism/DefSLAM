@@ -31,11 +31,13 @@
 #include <Eigen/StdVector>
 
 #include "Converter.h"
+#include "Verbose.h"
 
 #include <mutex>
 
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::Verbose;
 
   void Optimizer::GlobalBundleAdjustemnt(Map *pMap, int nIterations, bool *pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
   {
