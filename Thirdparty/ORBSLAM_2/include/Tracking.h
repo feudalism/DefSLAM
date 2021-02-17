@@ -65,6 +65,11 @@ namespace ORB_SLAM2
     Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer,
              MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB,
              const string &strSettingPath, const int sensor, bool viewerOn);
+             
+    // Parse the config file
+    bool ParseCamParamFile(cv::FileStorage &fSettings);
+    bool ParseORBParamFile(cv::FileStorage &fSettings);
+    bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
     // Preprocess the input and call Track(). Extract features and performs stereo
     // matching.
