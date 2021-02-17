@@ -93,6 +93,7 @@ namespace ORB_SLAM2
     std::set<KeyFrame *> GetLoopEdges();
 
     // MapPoint observation functions
+    int GetNumberMPs();
     void addMapPoint(MapPoint *pMP, const size_t &idx);
     void EraseMapPointMatch(const size_t &idx);
     void EraseMapPointMatch(MapPoint *pMP);

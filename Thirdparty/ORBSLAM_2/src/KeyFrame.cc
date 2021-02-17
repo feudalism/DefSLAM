@@ -1042,7 +1042,19 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsi
         unique_lock<mutex> lock(mMutexPose);
         Vw_.copyTo(Vw);
     }
+
+int KeyFrame::GetNumberMPs()
+{
+    unique_lock<mutex> lock(mMutexFeatures);
+    int numberMPs = 0;
+    for(size_t i=0, iend=mvpMapPoints.size(); i<iend; i++)
+    {
+        if(!mvpMapPoints[i])
+            continue;
+        numberMPs++;
+    }
+    return numberMPs;
 }
 
-
+}
 // namespace ORB_SLAM2
