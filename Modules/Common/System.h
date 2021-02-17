@@ -120,8 +120,12 @@ namespace defSLAM
     // Returns the camera pose (empty if tracking fails).
     virtual cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp,
                                    const cv::Mat _mask = cv::Mat());
-    // virtual cv::Mat TrackMonocularwithOut(const cv::Mat &im,const cv::Mat
-    // &imOut, const double &timestamp,const cv::Mat _mask = cv::Mat());
+                                   
+    // Proccess the given monocular frame and optionally imu data
+    // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
+    // Returns the camera pose (empty if tracking fails).
+    cv::Mat TrackMonocularImu(const cv::Mat &im, const double &timestamp,
+        const vector<IMU::Point>& vImuMeas = vector<IMU::Point>(), string filename="");
 
     // Using stereo for calculate the ground truth
     virtual cv::Mat TrackMonocularGT(const cv::Mat &im, const cv::Mat &imRight,
