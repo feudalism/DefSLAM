@@ -138,7 +138,10 @@ namespace ORB_SLAM2
         cv::Mat GetImuPosition();
         cv::Mat GetImuRotation();
         cv::Mat GetImuPose();
+
+        void SetNewBias(const defSLAM::IMU::Bias &b);
         
+        bool imuIsPreintegrated();
         void setIntegrated();
 
     public:

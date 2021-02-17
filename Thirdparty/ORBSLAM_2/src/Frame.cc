@@ -970,4 +970,19 @@ void Frame::SetImuPoseVelocity(const cv::Mat &Rwb, const cv::Mat &twb, const cv:
     mTcw = mImuCalib.Tcb*Tbw;
     UpdatePoseMatrices();
 }
+
+void Frame::SetNewBias(const defSLAM::IMU::Bias &b)
+{
+    mImuBias = b;
+    if(mpImuPreintegrated)
+        mpImuPreintegrated->SetNewBias(b);
+}
+
+bool Frame::imuIsPreintegrated()
+{
+    unique_lock<std::mutex> lock(*mpMutexImu);
+    return mbImuPreintegrated;
+}
+
+
 } // namespace ORB_SLAM2
