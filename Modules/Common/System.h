@@ -49,6 +49,11 @@ namespace ORB_SLAM2
   class Viewer;
 } // namespace ORB_SLAM2
 
+namespace ORB_SLAM3
+{
+    class Atlas;
+}
+
 namespace defSLAM
 {
   using ORB_SLAM2::FrameDrawer;
@@ -61,6 +66,8 @@ namespace defSLAM
   using ORB_SLAM2::ORBVocabulary;
   using ORB_SLAM2::Tracking;
   using ORB_SLAM2::Viewer;
+  
+  using ORB_SLAM2::Atlas;
 
   class System
   {
@@ -161,6 +168,10 @@ namespace defSLAM
     // KeyFrame database for place recognition (relocalization and loop
     // detection).
     KeyFrameDatabase *mpKeyFrameDatabase;
+
+    // Map structure that stores the pointers to all KeyFrames and MapPoints.
+    //Map* mpMap;
+    Atlas* mpAtlas;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     Map *mpMap;

@@ -32,9 +32,11 @@ namespace ORB_SLAM2
 {
   using ORB_SLAM3::Atlas;
 
-  LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas,
+  LocalMapping::LocalMapping(System* pSys, Map *pMap,
         const float bMonocular, bool bInertial, const string &_strSeqName)
-    : mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), bInitializing(false),
+    : mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false),
+    mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
+    bInitializing(false),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
     mbNewInit(false), mIdxInit(0), mScale(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9))
     {
@@ -90,7 +92,7 @@ namespace ORB_SLAM2
         if (!CheckNewKeyFrames() && !stopRequested())
         {
           // Local BA
-            if (mpAtlas->KeyFramesInMap() > 2)
+            if (mpMap->KeyFramesInMap() > 2)
             {
                 if(mbInertial && mpCurrentKeyFrame->GetMap()->isImuInitialized())
                 {
@@ -166,7 +168,7 @@ namespace ORB_SLAM2
                     }
 
                     // scale refinement
-                    if (((mpAtlas->KeyFramesInMap())<=100) &&
+                    if (((mpMap->KeyFramesInMap())<=100) &&
                             ((mTinit>25.0f && mTinit<25.5f)||
                             (mTinit>35.0f && mTinit<35.5f)||
                             (mTinit>45.0f && mTinit<45.5f)||
@@ -269,7 +271,7 @@ namespace ORB_SLAM2
     mpCurrentKeyFrame->UpdateConnections();
 
     // Insert Keyframe in Map
-    mpAtlas->AddKeyFrame(mpCurrentKeyFrame);
+    mpMap->AddKeyFrame(mpCurrentKeyFrame);
   }
 
   void LocalMapping::MapPointCulling()
@@ -538,7 +540,7 @@ namespace ORB_SLAM2
           continue;
 
         // Triangulation is succesfull
-        MapPoint *pMP = new defSLAM::DefMapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
+        MapPoint *pMP = new defSLAM::DefMapPoint(x3D, mpCurrentKeyFrame, mpMap);
 
         pMP->AddObservation(mpCurrentKeyFrame, idx1);
         pMP->AddObservation(pKF2, idx2);
@@ -550,7 +552,7 @@ namespace ORB_SLAM2
 
         pMP->UpdateNormalAndDepth();
 
-        mpAtlas->AddMapPoint(pMP);
+        mpMap->addMapPoint(pMP);
         mlpRecentAddedMapPoints.push_back(pMP);
 
         nnew++;
@@ -757,7 +759,7 @@ namespace ORB_SLAM2
     vector<KeyFrame *> vpLocalKeyFrames =
         mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
-    const bool bInitImu = mpAtlas->isImuInitialized();
+    const bool bInitImu = mpMap->isImuInitialized();
     int count=0;
 
     // Compoute last KF from optimizable window:
@@ -842,7 +844,7 @@ namespace ORB_SLAM2
         {
             if (mbInertial)
             {
-                if (mpAtlas->KeyFramesInMap()<=Nd)
+                if (mpMap->KeyFramesInMap()<=Nd)
                     continue;
 
                 if(pKF->mnId>(mpCurrentKeyFrame->mnId-2))
@@ -964,7 +966,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     }
 
 
-    if(mpAtlas->KeyFramesInMap()<nMinKF)
+    if(mpMap->KeyFramesInMap()<nMinKF)
         return;
 
     // Retrieve all keyframe in temporal order
@@ -1038,7 +1040,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     mInitTime = mpTracker->mLastFrame.mTimeStamp-vpKF.front()->mTimeStamp;
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
+    Optimizer::InertialOptimization(mpMap, mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     /*cout << "scale after inertial-only optimization: " << mScale << endl;
@@ -1057,17 +1059,17 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 
     // Before this line we are not changing the map
 
-    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+    unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
     if ((fabs(mScale-1.f)>0.00001)||!mbMonocular)
     {
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
+        mpMap->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
         mpTracker->UpdateFrameIMU(mScale,vpKF[0]->GetImuBias(),mpCurrentKeyFrame);
     }
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
     // Check if initialization OK
-    if (!mpAtlas->isImuInitialized())
+    if (!mpMap->isImuInitialized())
         for(int i=0;i<N;i++)
         {
             KeyFrame* pKF2 = vpKF[i];
@@ -1082,19 +1084,19 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     if (bFIBA)
     {
         if (priorA!=0.f)
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, true, priorG, priorA);
+            Optimizer::FullInertialBA(mpMap, 100, false, 0, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false);
+            Optimizer::FullInertialBA(mpMap, 100, false, 0, NULL, false);
     }
 
     std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
 
     // If initialization is OK
     mpTracker->UpdateFrameIMU(1.0,vpKF[0]->GetImuBias(),mpCurrentKeyFrame);
-    if (!mpAtlas->isImuInitialized())
+    if (!mpMap->isImuInitialized())
     {
-        cout << "IMU in Map " << mpAtlas->GetCurrentMap()->GetId() << " is initialized" << endl;
-        mpAtlas->SetImuInitialized();
+        cout << "IMU in Map " << mpMap->GetId() << " is initialized" << endl;
+        mpMap->SetImuInitialized();
         mpTracker->t0IMU = mpTracker->mCurrentFrame->mTimeStamp;
         mpCurrentKeyFrame->bImu = true;
     }
@@ -1160,7 +1162,7 @@ void LocalMapping::ScaleRefinement()
     mScale=1.0;
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale);
+    Optimizer::InertialOptimization(mpMap, mRwg, mScale);
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     if (mScale<1e-1) // 1e-1
@@ -1171,11 +1173,11 @@ void LocalMapping::ScaleRefinement()
     }
 
     // Before this line we are not changing the map
-    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+    unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
     if ((fabs(mScale-1.f)>0.00001)||!mbMonocular)
     {
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
+        mpMap->ApplyScaledRotation(Converter::toCvMat(mRwg).t(),mScale,true);
         mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
     }
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();

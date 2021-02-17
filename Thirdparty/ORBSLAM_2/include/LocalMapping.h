@@ -57,7 +57,7 @@ class LocalMapping
 {
 public:
     // LocalMapping(Map* pMap, MapDrawer* mpDrawer,const float bMonocular);
-    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+    LocalMapping(System* pSys, Map* pMap, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
 
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
@@ -151,7 +151,8 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
+    // Atlas* mpAtlas;
+    Map* mpMap;
 
     LoopClosing* mpLoopCloser;
     Tracking* mpTracker;

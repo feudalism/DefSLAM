@@ -41,13 +41,24 @@
 #include <thread>
 #include <unistd.h>
 
+#include "Verbose.h"
+
+namespace ORB_SLAM3
+{
+    Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL; 
+}
+
 namespace defSLAM
 {
-  System::System(const string &strVocFile, const string &strSettingsFile,
-                 const bool bUseViewer)
-      : mSensor(MONOCULAR), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
-        mbReset(false), mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
-  {
+    using ORB_SLAM3::Verbose;
+  
+    // original DefSLAM
+    System::System(const string &strVocFile, const string &strSettingsFile,
+                    const bool bUseViewer) :
+    mSensor(MONOCULAR), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
+    mbReset(false),
+    mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
+   {
     // Output welcome message
 #ifndef ORBSLAM
     cout << endl
@@ -120,26 +131,15 @@ namespace defSLAM
 // Initialize the Tracking thread
 //(it will live in the main thread of execution, the one that called this
 // constructor)
-#ifdef ORBSLAM
-    mpTracker =
-        new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpMap,
-                     mpKeyFrameDatabase, strSettingsFile, mSensor, bUseViewer);
-
-    // Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(mpMap, mpMapDrawer, mSensor == MONOCULAR);
-    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
-
-#else
     mpTracker = new DefTracking(this, mpVocabulary, mpFrameDrawer,
                                 mpMapDrawer, mpMap, mpKeyFrameDatabase,
                                 strSettingsFile, mSensor, bUseViewer);
 
     // Initialize the Local Mapping thread and launch
-    mpLocalMapper = new defSLAM::DefLocalMapping(
-        mpMap, strSettingsFile);
+    mpLocalMapper = new DefLocalMapping(this, mpMap, mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR,
+        strSettingsFile);
 #ifdef PARALLEL
     mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
-#endif
 #endif
 
 // Initialize the Loop Closing thread and launch
@@ -183,12 +183,15 @@ namespace defSLAM
 #endif
   }
 
-
-System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
-               const bool bUseViewer, const int initFr, const string &strSequence, const string &strLoadingFile):
-    mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
+    // from ORBSLAM3
+    System::System(const string &strVocFile, const string &strSettingsFile,
+                    const eSensor sensor,
+                    const bool bUseViewer, const int initFr, const string &strSequence,
+                    const string &strLoadingFile) :
+    mSensor(sensor), mpLoopCloser(NULL), mpViewer(static_cast<Viewer*>(NULL)),
+    mbReset(false), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
-{
+   {
     cout << "Input sensor was set to: ";
     if(mSensor==MONOCULAR)
         cout << "Monocular" << endl;
@@ -228,25 +231,32 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
     //Create the Atlas
-    //mpMap = new Map();
-    mpAtlas = new Atlas(0);
+    mpMap = new DefMap();
+    // mpAtlas = new Atlas(0);
     
     if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
-        mpAtlas->SetInertialSensor();
+        mpMap->SetInertialSensor();
 
     //Create Drawers. These are used by the Viewer
-    mpFrameDrawer = new FrameDrawer(mpAtlas);
-    mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile);
+    mpFrameDrawer = new FrameDrawer(mpMap);
+    mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
+    // mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+                             // mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
+    mpTracker = new DefTracking(this, mpVocabulary, mpFrameDrawer,
+                                mpMapDrawer, mpMap, mpKeyFrameDatabase,
+                                strSettingsFile, mSensor, bUseViewer);
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence);
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
+    // mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence);
+    mpLocalMapper = new defSLAM::DefLocalMapping(this, mpMap,
+        mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR,
+        strSettingsFile);
+    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
+    
     mpLocalMapper->mInitFr = initFr;
     mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
     if(mpLocalMapper->mThFarPoints!=0)
@@ -257,17 +267,35 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     else
         mpLocalMapper->mbFarPoints = false;
 
-    //Initialize the Loop Closing thread and launch
-    // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-    mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR); // mSensor!=MONOCULAR);
-    mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
+    // //Initialize the Loop Closing thread and launch
+    // // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
+    // mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR); // mSensor!=MONOCULAR);
+    // mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+    
+    // from defSLAM
+#ifndef ORBSLAM
+    mpLoopCloser = nullptr;
+    mptLoopClosing = nullptr;
+#else
+    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary,
+                                   mSensor != MONOCULAR);
+    mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+#endif
 
     //Initialize the Viewer thread and launch
     if(bUseViewer)
     {
-        mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+        #ifndef ORBSLAM
+              mpViewer = new DefViewer(this, mpFrameDrawer, mpMapDrawer, mpTracker,
+                                       strSettingsFile);
+        #else
+              mpViewer = new Viewer(this, mpFrameDrawer, mpMapDrawer, mpTracker,
+                                    strSettingsFile);
+        #endif
+
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
+        
         mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
     }
@@ -284,8 +312,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     // Fix verbosity
     Verbose::SetTh(Verbose::VERBOSITY_QUIET);
-
-}
+    }
 
 
   cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp,

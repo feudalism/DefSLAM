@@ -48,9 +48,10 @@ namespace defSLAM
    *  reg: Weight for the Schwarzian regularizer in Schwarp estimation.
    *  bendingReg_ : Weight for the beding regularizer in Shape-from-normals.
    *********************/
-  DefLocalMapping::DefLocalMapping(Map *pMap,
+  DefLocalMapping::DefLocalMapping(System* pSys, Map *pMap,
+                                   const float bMonocular, bool bInertial, 
                                    const string &strSettingPath)
-      : LocalMapping(pMap, nullptr, 0.0),
+      : LocalMapping(pSys, pMap, bMonocular, bInertial),
         createTemplate_(false),
         pointsToTemplate_(100),
         chiLimit_(0.07)
