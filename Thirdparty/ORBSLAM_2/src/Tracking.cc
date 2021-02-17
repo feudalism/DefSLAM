@@ -216,9 +216,25 @@ namespace ORB_SLAM2
         cv::cvtColor(im, mImGray, cv::COLOR_BGRA2GRAY);
     }
 
-    mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
-                              mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+    // Create frame
+    if(mSensor == System::IMU_MONOCULAR)
+    {
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+        {
+            mCurrentFrame = new Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+        }
+        else
+            mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+    }
+    else
+        mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
+                                  mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+    
+    // Set initial time
+    if (mState==NO_IMAGES_YET)
+        t0=timestamp;
 
+    lastID = mCurrentFrame->mnId;
     Track();
 
     return mCurrentFrame->mTcw.clone();
