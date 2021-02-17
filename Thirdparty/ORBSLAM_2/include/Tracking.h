@@ -89,6 +89,9 @@ namespace ORB_SLAM2
                                            const cv::Mat &imDepth,
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
+                                           
+    void GrabImuData(const defSLAM::IMU::Point &imuMeasurement);
+    
     void SetLocalMapper(LocalMapping *pLocalMapper);
     void SetLoopClosing(LoopClosing *pLoopClosing);
     void SetViewer(Viewer *pViewer);

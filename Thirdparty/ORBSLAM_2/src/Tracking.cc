@@ -2706,5 +2706,10 @@ bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
     return true;
 }
 
+void Tracking::GrabImuData(const defSLAM::IMU::Point &imuMeasurement)
+{
+    unique_lock<mutex> lock(mMutexImuQueue);
+    mlQueueImuData.push_back(imuMeasurement);
+}
 
 } // namespace ORB_SLAM2
