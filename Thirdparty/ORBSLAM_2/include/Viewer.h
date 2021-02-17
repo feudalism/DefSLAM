@@ -63,6 +63,8 @@ namespace ORB_SLAM2
     void Updatetimestamp(double t);
 
     bool go();
+    
+    bool both;
 
   protected:
     bool Stop();

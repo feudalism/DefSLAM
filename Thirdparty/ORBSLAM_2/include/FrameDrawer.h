@@ -49,6 +49,8 @@ public:
     cv::Mat virtual DrawFrame();
 
     void SetError(double s = 0.0);
+    
+    bool both;
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);

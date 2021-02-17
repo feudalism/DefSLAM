@@ -27,6 +27,7 @@
 #include "Map.h"
 #include "ORBVocabulary.h"
 #include "Tracking.h"
+#include "Viewer.h"
 
 #include "KeyFrameDatabase.h"
 
@@ -41,6 +42,7 @@ namespace ORB_SLAM2 {
 class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
+class Viewer;
 
 class LoopClosing {
 public:
@@ -79,6 +81,8 @@ public:
   void RequestFinish();
 
   bool isFinished();
+
+  Viewer* mpViewer;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
