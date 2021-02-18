@@ -680,4 +680,9 @@ namespace defSLAM
     unique_lock<mutex> lock(mMutexState);
     return mTrackingState;
   }
+    void System::ResetActiveMap()
+    {
+        unique_lock<mutex> lock(mMutexReset);
+        mbResetActiveMap = true;
+    }
 } // namespace defSLAM
