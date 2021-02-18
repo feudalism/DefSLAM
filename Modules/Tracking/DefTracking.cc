@@ -44,6 +44,11 @@ namespace defSLAM
   class DefMap;
   class DefMapDrawer;
   class Node;
+  
+  using ORB_SLAM3::IMU::Point;
+  using ORB_SLAM3::IMU::Preintegrated;
+  using ORB_SLAM3::IMU::GRAVITY_VALUE;
+  using ORB_SLAM3::IMU::NormalizeRotation;
 
   // Constructor
   DefTracking::DefTracking(System *pSys, ORBVocabulary *pVoc,
@@ -709,7 +714,7 @@ namespace defSLAM
   }
 
     // OS3
-    void DefTracking::GrabImuData(const defSLAM::IMU::Point &imuMeasurement)
+    void DefTracking::GrabImuData(const Point &imuMeasurement)
     {
         unique_lock<mutex> lock(mMutexImuQueue);
         mlQueueImuData.push_back(imuMeasurement);
@@ -740,7 +745,7 @@ namespace defSLAM
                 unique_lock<mutex> lock(mMutexImuQueue);
                 if(!mlQueueImuData.empty())
                 {
-                    defSLAM::IMU::Point* m = &mlQueueImuData.front();
+                    Point* m = &mlQueueImuData.front();
                     cout.precision(17);
                     if(m->t<mCurrentFrame->mpPrevFrame->mTimeStamp-0.001l)
                     {
@@ -769,7 +774,7 @@ namespace defSLAM
 
 
         const int n = mvImuFromLastFrame.size()-1;
-        defSLAM::IMU::Preintegrated* pImuPreintegratedFromLastFrame = new defSLAM::IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
+        Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
 
         for(int i=0; i<n; i++)
         {
@@ -832,10 +837,10 @@ namespace defSLAM
             const cv::Mat Rwb1 = mpLastKeyFrame->GetImuRotation();
             const cv::Mat Vwb1 = mpLastKeyFrame->GetVelocity();
 
-            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-IMU::GRAVITY_VALUE);
+            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
             const float t12 = mpImuPreintegratedFromLastKF->dT;
 
-            cv::Mat Rwb2 = IMU::NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
+            cv::Mat Rwb2 = NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
             cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
             cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
             mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
@@ -851,10 +856,10 @@ namespace defSLAM
             const cv::Mat twb1 = mLastFrame.GetImuPosition();
             const cv::Mat Rwb1 = mLastFrame.GetImuRotation();
             const cv::Mat Vwb1 = mLastFrame.mVw;
-            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-IMU::GRAVITY_VALUE);
+            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
             const float t12 = mCurrentFrame->mpImuPreintegratedFrame->dT;
 
-            cv::Mat Rwb2 = IMU::NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
+            cv::Mat Rwb2 = NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
             cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
             cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 

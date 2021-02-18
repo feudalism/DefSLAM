@@ -45,8 +45,8 @@ namespace ORB_SLAM2
     class KeyFrame;
 
     using ORB_SLAM3::GeometricCamera;
+    using ORB_SLAM3::IMU::Calib;
     using ORB_SLAM3::ConstraintPoseImu;
-    using defSLAM::IMU::Calib;
 
     class Frame
     {
@@ -224,19 +224,19 @@ namespace ORB_SLAM2
         
         // IMU prediction
         cv::Mat mPredRwb, mPredtwb, mPredVwb;
-        defSLAM::IMU::Bias mPredBias;
+        ORB_SLAM3::IMU::Bias mPredBias;
 
         // IMU bias, calib
-        defSLAM::IMU::Bias mImuBias;
+        ORB_SLAM3::IMU::Bias mImuBias;
         Calib mImuCalib;
 
         // Imu preintegration from last keyframe
-        defSLAM::IMU::Preintegrated* mpImuPreintegrated;
+        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
         KeyFrame* mpLastKeyFrame;
 
         // Pointer to previous frame
         Frame* mpPrevFrame;
-        defSLAM::IMU::Preintegrated* mpImuPreintegratedFrame;        
+        ORB_SLAM3::IMU::Preintegrated* mpImuPreintegratedFrame;        
 
     public:
         // Current and Next Frame id.

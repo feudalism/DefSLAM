@@ -34,8 +34,28 @@
 
 #include <mutex>
 
+#include "Verbose.h"
+#include "G2oTypes.h"
+
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::Verbose;
+  using ORB_SLAM3::VertexPose;
+  using ORB_SLAM3::VertexVelocity;
+  using ORB_SLAM3::VertexGyroBias;
+  using ORB_SLAM3::VertexAccBias;
+  using ORB_SLAM3::VertexScale;
+  using ORB_SLAM3::VertexGDir;
+  
+  using ORB_SLAM3::EdgeInertial;
+  using ORB_SLAM3::EdgeGyroRW;
+  using ORB_SLAM3::EdgeAccRW;
+  using ORB_SLAM3::EdgeMono;
+  using ORB_SLAM3::EdgeStereo;
+  using ORB_SLAM3::EdgePriorAcc;
+  using ORB_SLAM3::EdgePriorGyro;
+  using ORB_SLAM3::EdgeInertialGS;
+  using ORB_SLAM3::EdgeGyroRW;
 
   void Optimizer::GlobalBundleAdjustemnt(Map *pMap, int nIterations, bool *pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
   {

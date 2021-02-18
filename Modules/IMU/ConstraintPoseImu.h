@@ -34,7 +34,7 @@ public:
     }
     
     ConstraintPoseImu(const cv::Mat &Rwb_, const cv::Mat &twb_, const cv::Mat &vwb_,
-                       const defSLAM::IMU::Bias &b, const cv::Mat &H_)
+                       const IMU::Bias &b, const cv::Mat &H_)
     {
         Rwb = Converter::toMatrix3d(Rwb_);
         twb = Converter::toVector3d(twb_);

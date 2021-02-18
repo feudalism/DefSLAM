@@ -37,8 +37,8 @@
 namespace ORB_SLAM2
 {
   using ORB_SLAM3::GeometricCamera;
-  using defSLAM::IMU::Calib;
-  using defSLAM::IMU::Bias;
+  using ORB_SLAM3::IMU::Calib;
+  using ORB_SLAM3::IMU::Bias;
 
   class Map;
   class MapPoint;
@@ -272,10 +272,10 @@ public:
 
     Map* GetMap();
 
-    // void SetNewBias(const defSLAM::IMU::Bias &b);
+    // void SetNewBias(const ORB_SLAM3::IMU::Bias &b);
     cv::Mat GetGyroBias();
     cv::Mat GetAccBias();
-    defSLAM::IMU::Bias GetImuBias();
+    ORB_SLAM3::IMU::Bias GetImuBias();
 
     bool bImu;
     
@@ -295,7 +295,7 @@ public:
     // LC
     cv::Mat mVwbGBA;
     cv::Mat mVwbBefGBA;
-    defSLAM::IMU::Bias mBiasGBA;
+    ORB_SLAM3::IMU::Bias mBiasGBA;
 
     // Variables used by merging
     cv::Mat mTcwMerge;
@@ -303,7 +303,7 @@ public:
     cv::Mat mTwcBefMerge;
     cv::Mat mVwbMerge;
     cv::Mat mVwbBefMerge;
-    defSLAM::IMU::Bias mBiasMerge;
+    ORB_SLAM3::IMU::Bias mBiasMerge;
     long unsigned int mnMergeCorrectedForKF;
     long unsigned int mnMergeForKF;
     float mfScaleMerge;
@@ -317,7 +317,7 @@ public:
     KeyFrame* mPrevKF;
     KeyFrame* mNextKF;
 
-    defSLAM::IMU::Preintegrated* mpImuPreintegrated;
+    ORB_SLAM3::IMU::Preintegrated* mpImuPreintegrated;
     Calib mImuCalib;
     unsigned int mnOriginMapId;
 
@@ -369,7 +369,7 @@ protected:
     cv::Mat Vw;
 
     // Imu bias
-    defSLAM::IMU::Bias mImuBias;
+    ORB_SLAM3::IMU::Bias mImuBias;
     
     // Spanning Tree and Loop Edges
     std::set<KeyFrame*> mspMergeEdges;
@@ -387,7 +387,7 @@ protected:
     // Backup variables for inertial
     long long int mBackupPrevKFId;
     long long int mBackupNextKFId;
-    defSLAM::IMU::Preintegrated mBackupImuPreintegrated;
+    ORB_SLAM3::IMU::Preintegrated mBackupImuPreintegrated;
 
     // Backup for Cameras
     unsigned int mnBackupIdCamera, mnBackupIdCamera2;

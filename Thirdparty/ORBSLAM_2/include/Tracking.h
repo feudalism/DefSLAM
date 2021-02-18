@@ -57,7 +57,9 @@ namespace ORB_SLAM2
   class Map;
   class LocalMapping;
   class LoopClosing;
+  
   using defSLAM::System;
+  using ORB_SLAM3::GeometricCamera;
 
   class Tracking
   {
@@ -210,20 +212,20 @@ namespace ORB_SLAM2
     bool mbMapUpdated;
 
     // Imu preintegration from last frame
-    defSLAM::IMU::Preintegrated *mpImuPreintegratedFromLastKF;
+    ORB_SLAM3::IMU::Preintegrated *mpImuPreintegratedFromLastKF;
 
     // Queue of IMU measurements between frames
-    std::list<defSLAM::IMU::Point> mlQueueImuData;
+    std::list<ORB_SLAM3::IMU::Point> mlQueueImuData;
 
     // Vector of IMU measurements from previous to current frame (to be filled by PreintegrateIMU)
-    std::vector<defSLAM::IMU::Point> mvImuFromLastFrame;
+    std::vector<ORB_SLAM3::IMU::Point> mvImuFromLastFrame;
     std::mutex mMutexImuQueue;
 
     // Imu calibration parameters
-    defSLAM::IMU::Calib *mpImuCalib;
+    ORB_SLAM3::IMU::Calib *mpImuCalib;
 
     // Last Bias Estimation (at keyframe creation)
-    defSLAM::IMU::Bias mLastBias;
+    ORB_SLAM3::IMU::Bias mLastBias;
     // /end OS3
 
     // In case of performing only localization, this flag is true when there are no matches to
@@ -338,7 +340,7 @@ namespace ORB_SLAM2
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
 
-    ORB_SLAM3::GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera, *mpCamera2;
 
     int initID, lastID;
 

@@ -29,10 +29,11 @@
 #include <boost/serialization/assume_abstract.hpp>
 
 #include "GeometricCamera.h"
-
 #include "TwoViewReconstruction.h"
 
 namespace ORB_SLAM3 {
+    class TwoViewReconstruction;
+    
     class Pinhole : public GeometricCamera {
 
     friend class boost::serialization::access;

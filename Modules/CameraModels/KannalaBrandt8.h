@@ -29,10 +29,12 @@
 #include <boost/serialization/vector.hpp>
 
 #include "GeometricCamera.h"
-
 #include "TwoViewReconstruction.h"
 
+
 namespace ORB_SLAM3 {
+    class TwoViewReconstruction;
+    
     class KannalaBrandt8 final : public GeometricCamera {
 
     friend class boost::serialization::access;
