@@ -24,10 +24,11 @@
 #include <Thirdparty/g2o/g2o/types/sim3.h>
 
 #include <Eigen/Geometry>
-#include <Thirdparty/ORBSLAM_3/include/CameraModels/GeometricCamera.h>
+#include <GeometricCamera.h>
 
 
-namespace ORB_SLAM3 {
+namespace defSLAM {
+    
 class  EdgeSE3ProjectXYZOnlyPose: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -172,7 +173,7 @@ public:
 };
 
 
-class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, ORB_SLAM3::VertexSim3Expmap>
+class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, defSLAM::VertexSim3Expmap>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -182,7 +183,7 @@ public:
 
     void computeError()
     {
-        const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+        const defSLAM::VertexSim3Expmap* v1 = static_cast<const defSLAM::VertexSim3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);
@@ -203,7 +204,7 @@ public:
 
     void computeError()
     {
-        const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+        const defSLAM::VertexSim3Expmap* v1 = static_cast<const defSLAM::VertexSim3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);

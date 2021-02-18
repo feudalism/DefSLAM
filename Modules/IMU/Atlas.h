@@ -43,6 +43,11 @@ namespace ORB_SLAM2
     class Frame;
 }
 
+namespace defSLAM
+{
+    class KannalaBrandt8;
+    class Pinhole;
+}
 
 namespace ORB_SLAM3
 {
@@ -54,8 +59,9 @@ namespace ORB_SLAM3
     using ORB_SLAM2::Frame;
     using ORB_SLAM2::ORBVocabulary;
     
-    class KannalaBrandt8;
-    class Pinhole;
+    using defSLAM::GeometricCamera;
+    using defSLAM::KannalaBrandt8;
+    using defSLAM::Pinhole;
 
 class Atlas
 {

@@ -67,7 +67,7 @@ namespace defSLAM
   using ORB_SLAM2::Tracking;
   using ORB_SLAM2::Viewer;
   
-  using ORB_SLAM2::Atlas;
+  using ORB_SLAM3::Atlas;
 
   class System
   {

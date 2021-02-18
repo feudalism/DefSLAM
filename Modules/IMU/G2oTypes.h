@@ -41,14 +41,14 @@
 #include "ImuTypes.h"
 #include "ConstraintPoseImu.h"
 
-namespace ORB_SLAM3
+namespace defSLAM
 {
 
 using ORB_SLAM2::Converter;
 using ORB_SLAM2::KeyFrame;
 using ORB_SLAM2::Frame;
 
-class GeometricCamera;
+using ORB_SLAM3::ConstraintPoseImu;
 
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 typedef Eigen::Matrix<double, 9, 1> Vector9d;

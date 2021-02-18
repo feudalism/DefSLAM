@@ -33,7 +33,7 @@
 
 #include <Eigen/Geometry>
 
-namespace ORB_SLAM3 {
+namespace defSLAM {
     class GeometricCamera {
 
         friend class boost::serialization::access;

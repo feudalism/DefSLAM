@@ -44,9 +44,9 @@ namespace ORB_SLAM2
     class MapPoint;
     class KeyFrame;
 
-    using ORB_SLAM3::GeometricCamera;
-    using ORB_SLAM3::ConstraintPoseImu;
+    using defSLAM::GeometricCamera;
     using defSLAM::IMU::Calib;
+    using ORB_SLAM3::ConstraintPoseImu;
 
     class Frame
     {

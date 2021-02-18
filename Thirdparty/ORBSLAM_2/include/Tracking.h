@@ -57,7 +57,9 @@ namespace ORB_SLAM2
   class Map;
   class LocalMapping;
   class LoopClosing;
+  
   using defSLAM::System;
+  using defSLAM::GeometricCamera;
 
   class Tracking
   {
@@ -355,7 +357,7 @@ namespace ORB_SLAM2
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
 
-    ORB_SLAM3::GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera, *mpCamera2;
 
     int initID, lastID;
 

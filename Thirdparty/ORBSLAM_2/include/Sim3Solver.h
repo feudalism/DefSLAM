@@ -33,7 +33,7 @@
 namespace ORB_SLAM2
 {
     
-using ORB_SLAM3::GeometricCamera;
+using defSLAM::GeometricCamera;
 
 class Sim3Solver
 {

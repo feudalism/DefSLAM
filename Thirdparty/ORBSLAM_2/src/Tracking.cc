@@ -43,13 +43,14 @@
 
 #include "Pinhole.h"
 #include "KannalaBrandt8.h"
+#include "Verbose.h"
 
 using namespace std;
 
 namespace ORB_SLAM2
 {
-    using ORB_SLAM3::Pinhole;
-    using ORB_SLAM3::KannalaBrandt8;
+    using defSLAM::Pinhole;
+    using defSLAM::KannalaBrandt8;
 
   Tracking::Tracking(System *pSys, ORBVocabulary *pVoc, FrameDrawer *pFrameDrawer,
                      MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase *pKFDB,

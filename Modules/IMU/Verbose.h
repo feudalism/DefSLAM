@@ -1,3 +1,6 @@
+#include <string>
+#include <iostream>
+
 namespace ORB_SLAM3
 {
     class Verbose
@@ -18,7 +21,7 @@ namespace ORB_SLAM3
         static void PrintMess(std::string str, eLevel lev)
         {
             if(lev <= th)
-                cout << str << endl;
+                std::cout << str << std::endl;
         }
 
         static void SetTh(eLevel _th)

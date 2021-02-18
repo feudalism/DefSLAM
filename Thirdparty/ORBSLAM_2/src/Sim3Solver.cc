@@ -33,7 +33,7 @@
 namespace ORB_SLAM2
 {
     
-using ORB_SLAM3::GeometricCamera;
+using defSLAM::GeometricCamera;
 
 
 Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale):

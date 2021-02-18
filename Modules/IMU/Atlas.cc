@@ -21,11 +21,13 @@
 
 #include "GeometricCamera.h"
 #include "Pinhole.h"
-#include "KannalaBrandt8.h"
+#include "KannalaBrandt8.h" 
 
 namespace ORB_SLAM3
 {
-
+    using defSLAM::KannalaBrandt8;
+    using defSLAM::Pinhole;
+   
 Atlas::Atlas(){
     mpCurrentMap = static_cast<Map*>(NULL);
 }

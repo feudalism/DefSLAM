@@ -33,9 +33,13 @@
 #include <pangolin/pangolin.h>
 #include "ORBVocabulary.h"
 
-namespace ORB_SLAM3
+namespace defSLAM
 {
     class GeometricCamera;
+}
+
+namespace ORB_SLAM3
+{
     class Atlas;
 }
 
@@ -47,7 +51,7 @@ namespace ORB_SLAM2
   class KeyFrameDatabase;
   
   using ORB_SLAM3::Atlas;
-  using ORB_SLAM3::GeometricCamera;
+  using defSLAM::GeometricCamera;
   
   class Map
   {
