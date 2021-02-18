@@ -30,12 +30,23 @@
 #include <vector>
 
 #include "GeometricCamera.h"
+#include <pangolin/pangolin.h>
+#include "ORBVocabulary.h"
+
+namespace defSLAM
+{
+    class GeometricCamera;
+}
 
 namespace ORB_SLAM2
 {
   class MapPoint;
   class KeyFrame;
   class Frame;
+  class KeyFrameDatabase;
+  
+  using ORB_SLAM3::GeometricCamera;
+  
   class Map
   {
   public:

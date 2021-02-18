@@ -28,13 +28,13 @@
 #define NTHREADS 2
 #endif
 
-#include <Thirdparty/ORBSLAM_3/include/CameraModels/Pinhole.h>
+#include <Pinhole.h>
 #include "ImuTypes.h"
 
 namespace ORB_SLAM2
 {
+  using ORB_SLAM3::IMU::Calib;
   using ORB_SLAM3::Pinhole;
-  using defSLAM::IMU::Calib;
 
   long unsigned int Frame::nNextId = 0;
   bool Frame::mbInitialComputations = true;

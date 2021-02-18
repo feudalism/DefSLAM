@@ -48,6 +48,9 @@ namespace defSLAM
   using ORB_SLAM2::Tracking;
 
   class DefKeyFrame;
+  
+  using ORB_SLAM3::IMU::Point;
+  
   class DefTracking : public Tracking
   {
 
@@ -78,7 +81,7 @@ namespace defSLAM
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
     // OS3
-    void GrabImuData(const IMU::Point &imuMeasurement);
+    void GrabImuData(const Point &imuMeasurement);
 
   protected:
     // Main function of tracking.
