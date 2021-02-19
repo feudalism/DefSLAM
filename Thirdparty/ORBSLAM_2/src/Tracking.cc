@@ -227,9 +227,13 @@ namespace ORB_SLAM2
         else
             mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     }
-    else
-        mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
-                                  mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+    else if (mSensor == System::MONOCULAR)
+    {
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+            mCurrentFrame = new Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+        else
+            mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+    }
     
     // Set initial time
     if (mState==NO_IMAGES_YET)
