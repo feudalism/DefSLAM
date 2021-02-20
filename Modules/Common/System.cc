@@ -41,8 +41,17 @@
 #include <thread>
 #include <unistd.h>
 
+#include "Verbose.h"
+
+namespace ORB_SLAM3
+{
+  Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+}
+  
 namespace defSLAM
 {
+  using ORB_SLAM3::Verbose;
+  
   System::System(const string &strVocFile, const string &strSettingsFile,
                  const bool bUseViewer)
       : mSensor(MONOCULAR), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
@@ -181,6 +190,110 @@ namespace defSLAM
     mpTracker->SetLoopClosing(nullptr);
     mpLocalMapper->SetLoopCloser(nullptr);
 #endif
+  }
+  
+  // Constructor only for the IMU_MONOCULAR case
+  System::System(const string &strVocFile, const string &strSettingsFile,
+      const eSensor sensor,
+      const bool bUseViewer,
+      const int initFr, const string &strSequence, const string &strLoadingFile):
+      mSensor(sensor), mpLoopCloser(NULL), mpViewer(static_cast<Viewer*>(NULL)),
+      mbReset(false), mbActivateLocalizationMode(false),
+      mbDeactivateLocalizationMode(false),
+      mbResetActiveMap(false)
+  {
+      if(!mSensor==IMU_MONOCULAR)
+      {
+          cout << "Called the wrong System::CTOR; sensor is not IMU_MONOCULAR" << endl;
+          exit(-1);
+      }
+          
+
+      //Check settings file
+      cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
+      if(!fsSettings.isOpened())
+      {
+         cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+         exit(-1);
+      }
+
+      bool loadedAtlas = false;
+
+      //Load ORB Vocabulary
+      cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
+
+      mpVocabulary = new ORBVocabulary();
+      bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+      if(!bVocLoad)
+      {
+          cerr << "Wrong path to vocabulary. " << endl;
+          cerr << "Falied to open at: " << strVocFile << endl;
+          exit(-1);
+      }
+      cout << "Vocabulary loaded!" << endl << endl;
+
+      //Create KeyFrame Database
+      mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+
+      //Create the map
+      mpMap = new DefMap();
+      mpMap->SetInertialSensor();
+
+      //Create Drawers. These are used by the Viewer
+      mpFrameDrawer = new DefFrameDrawer(mpMap);
+      mpMapDrawer = new DefMapDrawer(mpMap, strSettingsFile);
+
+      //Initialize the Tracking thread
+      //(it will live in the main thread of execution, the one that called this constructor)
+      // mpTracker = new DefTracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+                               // mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, bUseViewer);
+      mpTracker = new DefTracking(this, mpVocabulary, mpFrameDrawer,
+                                mpMapDrawer, mpMap, mpKeyFrameDatabase,
+                                strSettingsFile, mSensor, bUseViewer);
+
+      //Initialize the Local Mapping thread and launch
+      // mpLocalMapper = new DefLocalMapping(this, mpMap,
+        // mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR, strSettingsFile);
+      mpLocalMapper = new DefLocalMapping(
+        mpMap, strSettingsFile);
+      mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
+      
+      mpLocalMapper->mInitFr = initFr;
+      mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
+      if(mpLocalMapper->mThFarPoints!=0)
+      {
+          cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
+          mpLocalMapper->mbFarPoints = true;
+      }
+      else
+          mpLocalMapper->mbFarPoints = false;
+
+      //Initialize the Loop Closing thread and launch
+      // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
+      mpLoopCloser = nullptr;
+      mptLoopClosing = nullptr;
+
+      //Initialize the Viewer thread and launch
+      if(bUseViewer)
+      {
+          mpViewer = new DefViewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+          mptViewer = new thread(&Viewer::Run, mpViewer);
+          mpTracker->SetViewer(mpViewer);
+      }
+
+      //Set pointers between threads
+      mpTracker->SetLocalMapper(mpLocalMapper);
+      mpTracker->SetLoopClosing(mpLoopCloser);
+
+      mpLocalMapper->SetTracker(mpTracker);
+      mpLocalMapper->SetLoopCloser(mpLoopCloser);
+
+      // mpLoopCloser->SetTracker(mpTracker);
+      // mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+      // Fix verbosity
+      Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+
   }
 
   cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp,
