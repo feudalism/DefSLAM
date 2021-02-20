@@ -36,6 +36,8 @@
 #include <DefMapDrawer.h>
 #include <set_MAC.h>
 
+#include<opencv2/core/core.hpp>
+#include<opencv2/features2d/features2d.hpp>
 #include "ImuTypes.h"
 
 namespace defSLAM
@@ -713,169 +715,237 @@ namespace defSLAM
     mpLastKeyFrame = pKF;
   }
 
-    // OS3
-    void DefTracking::GrabImuData(const Point &imuMeasurement)
-    {
-        unique_lock<mutex> lock(mMutexImuQueue);
-        mlQueueImuData.push_back(imuMeasurement);
-    }
-    
-    void DefTracking::PreintegrateIMU()
-    {
-        if(!mCurrentFrame->mpPrevFrame)
-        {
-            mCurrentFrame->setIntegrated();
-            return;
-        }
+  // OS3
+  void DefTracking::GrabImuData(const Point &imuMeasurement)
+  {
+      unique_lock<mutex> lock(mMutexImuQueue);
+      mlQueueImuData.push_back(imuMeasurement);
+  }
+  
+  void DefTracking::PreintegrateIMU()
+  {
+      if(!mCurrentFrame->mpPrevFrame)
+      {
+          mCurrentFrame->setIntegrated();
+          return;
+      }
 
-        // cout << "start loop. Total meas:" << mlQueueImuData.size() << endl;
+      // cout << "start loop. Total meas:" << mlQueueImuData.size() << endl;
 
-        mvImuFromLastFrame.clear();
-        mvImuFromLastFrame.reserve(mlQueueImuData.size());
-        if(mlQueueImuData.size() == 0)
-        {
-            mCurrentFrame->setIntegrated();
-            return;
-        }
+      mvImuFromLastFrame.clear();
+      mvImuFromLastFrame.reserve(mlQueueImuData.size());
+      if(mlQueueImuData.size() == 0)
+      {
+          mCurrentFrame->setIntegrated();
+          return;
+      }
 
-        while(true)
-        {
-            bool bSleep = false;
-            {
-                unique_lock<mutex> lock(mMutexImuQueue);
-                if(!mlQueueImuData.empty())
-                {
-                    Point* m = &mlQueueImuData.front();
-                    cout.precision(17);
-                    if(m->t<mCurrentFrame->mpPrevFrame->mTimeStamp-0.001l)
-                    {
-                        mlQueueImuData.pop_front();
-                    }
-                    else if(m->t<mCurrentFrame->mTimeStamp-0.001l)
-                    {
-                        mvImuFromLastFrame.push_back(*m);
-                        mlQueueImuData.pop_front();
-                    }
-                    else
-                    {
-                        mvImuFromLastFrame.push_back(*m);
-                        break;
-                    }
-                }
-                else
-                {
-                    break;
-                    bSleep = true;
-                }
-            }
-            if(bSleep)
-                usleep(500);
-        }
+      while(true)
+      {
+          bool bSleep = false;
+          {
+              unique_lock<mutex> lock(mMutexImuQueue);
+              if(!mlQueueImuData.empty())
+              {
+                  Point* m = &mlQueueImuData.front();
+                  cout.precision(17);
+                  if(m->t<mCurrentFrame->mpPrevFrame->mTimeStamp-0.001l)
+                  {
+                      mlQueueImuData.pop_front();
+                  }
+                  else if(m->t<mCurrentFrame->mTimeStamp-0.001l)
+                  {
+                      mvImuFromLastFrame.push_back(*m);
+                      mlQueueImuData.pop_front();
+                  }
+                  else
+                  {
+                      mvImuFromLastFrame.push_back(*m);
+                      break;
+                  }
+              }
+              else
+              {
+                  break;
+                  bSleep = true;
+              }
+          }
+          if(bSleep)
+              usleep(500);
+      }
 
 
-        const int n = mvImuFromLastFrame.size()-1;
-        Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
+      const int n = mvImuFromLastFrame.size()-1;
+      Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
 
-        for(int i=0; i<n; i++)
-        {
-            float tstep;
-            cv::Point3f acc, angVel;
-            if((i==0) && (i<(n-1)))
-            {
-                float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-                float tini = mvImuFromLastFrame[i].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
-                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
-                        (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
-                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
-                        (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tini/tab))*0.5f;
-                tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
-            }
-            else if(i<(n-1))
-            {
-                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a)*0.5f;
-                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w)*0.5f;
-                tstep = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-            }
-            else if((i>0) && (i==(n-1)))
-            {
-                float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-                float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame->mTimeStamp;
-                acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
-                        (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
-                angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
-                        (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tend/tab))*0.5f;
-                tstep = mCurrentFrame->mTimeStamp-mvImuFromLastFrame[i].t;
-            }
-            else if((i==0) && (i==(n-1)))
-            {
-                acc = mvImuFromLastFrame[i].a;
-                angVel = mvImuFromLastFrame[i].w;
-                tstep = mCurrentFrame->mTimeStamp-mCurrentFrame->mpPrevFrame->mTimeStamp;
-            }
+      for(int i=0; i<n; i++)
+      {
+          float tstep;
+          cv::Point3f acc, angVel;
+          if((i==0) && (i<(n-1)))
+          {
+              float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+              float tini = mvImuFromLastFrame[i].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+              acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
+                      (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
+              angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
+                      (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tini/tab))*0.5f;
+              tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+          }
+          else if(i<(n-1))
+          {
+              acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a)*0.5f;
+              angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w)*0.5f;
+              tstep = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+          }
+          else if((i>0) && (i==(n-1)))
+          {
+              float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+              float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame->mTimeStamp;
+              acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
+                      (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
+              angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
+                      (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tend/tab))*0.5f;
+              tstep = mCurrentFrame->mTimeStamp-mvImuFromLastFrame[i].t;
+          }
+          else if((i==0) && (i==(n-1)))
+          {
+              acc = mvImuFromLastFrame[i].a;
+              angVel = mvImuFromLastFrame[i].w;
+              tstep = mCurrentFrame->mTimeStamp-mCurrentFrame->mpPrevFrame->mTimeStamp;
+          }
 
-            if (!mpImuPreintegratedFromLastKF)
-                cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
-            mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
-            pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
-        }
+          if (!mpImuPreintegratedFromLastKF)
+              cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
+          mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
+          pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
+      }
 
-        mCurrentFrame->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
-        mCurrentFrame->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-        mCurrentFrame->mpLastKeyFrame = mpLastKeyFrame;
+      mCurrentFrame->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+      mCurrentFrame->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+      mCurrentFrame->mpLastKeyFrame = mpLastKeyFrame;
 
-        mCurrentFrame->setIntegrated();
-    }
+      mCurrentFrame->setIntegrated();
+  }
 
-    bool DefTracking::PredictStateIMU()
-    {
-        if(!mCurrentFrame->mpPrevFrame)
-            return false;
+  bool DefTracking::PredictStateIMU()
+  {
+      if(!mCurrentFrame->mpPrevFrame)
+          return false;
 
-        if(mbMapUpdated && mpLastKeyFrame)
-        {
-            const cv::Mat twb1 = mpLastKeyFrame->GetImuPosition();
-            const cv::Mat Rwb1 = mpLastKeyFrame->GetImuRotation();
-            const cv::Mat Vwb1 = mpLastKeyFrame->GetVelocity();
+      if(mbMapUpdated && mpLastKeyFrame)
+      {
+          const cv::Mat twb1 = mpLastKeyFrame->GetImuPosition();
+          const cv::Mat Rwb1 = mpLastKeyFrame->GetImuRotation();
+          const cv::Mat Vwb1 = mpLastKeyFrame->GetVelocity();
 
-            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
-            const float t12 = mpImuPreintegratedFromLastKF->dT;
+          const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
+          const float t12 = mpImuPreintegratedFromLastKF->dT;
 
-            cv::Mat Rwb2 = NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
-            cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
-            cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
-            mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
-            mCurrentFrame->mPredRwb = Rwb2.clone();
-            mCurrentFrame->mPredtwb = twb2.clone();
-            mCurrentFrame->mPredVwb = Vwb2.clone();
-            mCurrentFrame->mImuBias = mpLastKeyFrame->GetImuBias();
-            mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
-            return true;
-        }
-        else if(!mbMapUpdated)
-        {
-            const cv::Mat twb1 = mLastFrame.GetImuPosition();
-            const cv::Mat Rwb1 = mLastFrame.GetImuRotation();
-            const cv::Mat Vwb1 = mLastFrame.mVw;
-            const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
-            const float t12 = mCurrentFrame->mpImuPreintegratedFrame->dT;
+          cv::Mat Rwb2 = NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
+          cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
+          cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
+          mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+          mCurrentFrame->mPredRwb = Rwb2.clone();
+          mCurrentFrame->mPredtwb = twb2.clone();
+          mCurrentFrame->mPredVwb = Vwb2.clone();
+          mCurrentFrame->mImuBias = mpLastKeyFrame->GetImuBias();
+          mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+          return true;
+      }
+      else if(!mbMapUpdated)
+      {
+          const cv::Mat twb1 = mLastFrame.GetImuPosition();
+          const cv::Mat Rwb1 = mLastFrame.GetImuRotation();
+          const cv::Mat Vwb1 = mLastFrame.mVw;
+          const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
+          const float t12 = mCurrentFrame->mpImuPreintegratedFrame->dT;
 
-            cv::Mat Rwb2 = NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
-            cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
-            cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
+          cv::Mat Rwb2 = NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
+          cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
+          cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
-            mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
-            mCurrentFrame->mPredRwb = Rwb2.clone();
-            mCurrentFrame->mPredtwb = twb2.clone();
-            mCurrentFrame->mPredVwb = Vwb2.clone();
-            mCurrentFrame->mImuBias =mLastFrame.mImuBias;
-            mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
-            return true;
-        }
+          mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+          mCurrentFrame->mPredRwb = Rwb2.clone();
+          mCurrentFrame->mPredtwb = twb2.clone();
+          mCurrentFrame->mPredVwb = Vwb2.clone();
+          mCurrentFrame->mImuBias =mLastFrame.mImuBias;
+          mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+          return true;
+      }
+      else
+          cout << "not IMU prediction!!" << endl;
+
+      return false;
+  }
+
+  cv::Mat DefTracking::DefGrabImageMonocular(const cv::Mat &im, const double &timestamp)
+  {
+      mImGray = im.clone();
+      im.copyTo(mImRGB);
+      saveResults = false;
+
+      if (mImGray.channels() == 3)
+      {
+        if (mbRGB)
+          cv::cvtColor(im, mImGray, cv::COLOR_RGB2GRAY);
         else
-            cout << "not IMU prediction!!" << endl;
+          cv::cvtColor(im, mImGray, cv::COLOR_BGR2GRAY);
+      }
+      else if (mImGray.channels() == 4)
+      {
+        if (mbRGB)
+          cv::cvtColor(im, mImGray, cv::COLOR_RGBA2GRAY);
+        else
+          cv::cvtColor(im, mImGray, cv::COLOR_BGRA2GRAY);
+      }
 
-        return false;
-    }
+      // if (mSensor == System::MONOCULAR)
+      // {
+          // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+              // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+          // else
+              // mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+      // }
+      // else if(mSensor == System::IMU_MONOCULAR)
+      // {
+          // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+          // {
+              // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+          // }
+          // else
+              // mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+      // }
+      
+      mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
+                              mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+
+      if (mState==NO_IMAGES_YET)
+          t0=timestamp;
+
+      std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+
+      lastID = mCurrentFrame->mnId;
+      
+      Track();
+
+      std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+      double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
+
+  #ifdef SAVE_TIMES
+      f_track_times << mCurrentFrame->mTimeORB_Ext << ",";
+      f_track_times << mCurrentFrame->mTimeStereoMatch << ",";
+      f_track_times << mTime_PreIntIMU << ",";
+      f_track_times << mTime_PosePred << ",";
+      f_track_times << mTime_LocalMapTrack << ",";
+      f_track_times << mTime_NewKF_Dec << ",";
+      f_track_times << t_track << endl;
+  #endif
+
+      return mCurrentFrame->mTcw.clone();
+  }
+
 
 
 } // namespace defSLAM

@@ -24,6 +24,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <opencv2/video/tracking.hpp>
 
 #include <Tracking.h>
 #include <mutex>
@@ -82,6 +83,7 @@ namespace defSLAM
                                            cv::Mat _mask = cv::Mat());
     // OS3
     void GrabImuData(const Point &imuMeasurement);
+    cv::Mat DefGrabImageMonocular(const cv::Mat &im, const double &timestamp);
 
   protected:
     // Main function of tracking.
