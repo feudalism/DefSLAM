@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 #include "Verbose.h"
+#include "ImuTypes.h"
 
 namespace ORB_SLAM3
 {
@@ -51,6 +52,7 @@ namespace ORB_SLAM3
 namespace defSLAM
 {
   using ORB_SLAM3::Verbose;
+  using ORB_SLAM3::IMU::Point;
   
   System::System(const string &strVocFile, const string &strSettingsFile,
                  const bool bUseViewer)
@@ -594,4 +596,71 @@ namespace defSLAM
     unique_lock<mutex> lock(mMutexState);
     return mTrackingState;
   }
+
+  cv::Mat System::TrackMonocularIMU(const cv::Mat &im, const double &timestamp, const vector<Point>& vImuMeas, string filename)
+  {
+      if(mSensor!=IMU_MONOCULAR)
+      {
+          cerr << "ERROR: you called TrackMonocularIMU but input sensor was not set to Monocular-Inertial." << endl;
+          exit(-1);
+      }
+
+      // Check mode change
+      {
+          unique_lock<mutex> lock(mMutexMode);
+          if(mbActivateLocalizationMode)
+          {
+              mpLocalMapper->RequestStop();
+
+              // Wait until Local Mapping has effectively stopped
+              while(!mpLocalMapper->isStopped())
+              {
+                  usleep(1000);
+              }
+
+              mpTracker->InformOnlyTracking(true);
+              mbActivateLocalizationMode = false;
+          }
+          
+          if(mbDeactivateLocalizationMode)
+          {
+              mpTracker->InformOnlyTracking(false);
+              mpLocalMapper->Release();
+              mbDeactivateLocalizationMode = false;
+          }
+      }
+
+      // Check reset
+      {
+          unique_lock<mutex> lock(mMutexReset);
+          if(mbReset)
+          {
+              mpTracker->Reset();
+              mbReset = false;
+              mbResetActiveMap = false;
+          }
+          // else if(mbResetActiveMap)
+          // {
+              // cout << "SYSTEM-> Reseting active map in monocular case" << endl;
+              // mpTracker->ResetActiveMap();
+              // mbResetActiveMap = false;
+          // }
+      }
+
+      if (mSensor == System::IMU_MONOCULAR)
+          for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
+              static_cast<DefTracking *>(mpTracker)->GrabImuData(vImuMeas[i_imu]);
+
+      cv::Mat Tcw = static_cast<DefTracking *>(mpTracker)->DefGrabImageMonocular(im,timestamp);
+      if (mpViewer)
+        mpViewer->Updatetimestamp(timestamp);
+
+      unique_lock<mutex> lock2(mMutexState);
+      mTrackingState = mpTracker->mState;
+      mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
+      mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+
+      return Tcw;
+  }
+
 } // namespace defSLAM
