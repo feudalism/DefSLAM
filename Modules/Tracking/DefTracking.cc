@@ -968,9 +968,10 @@ namespace defSLAM
           // else
               // mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
       // }
-      
-      mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
-                              mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+      mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
+                              mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+      // mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
+                              // mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
 
       if (mState==NO_IMAGES_YET)
           t0=timestamp;
