@@ -60,6 +60,8 @@ namespace defSLAM
   using ORB_SLAM2::ORBVocabulary;
   using ORB_SLAM2::Tracking;
   using ORB_SLAM2::Viewer;
+  
+  using ORB_SLAM3::IMU::Point;
 
   class System
   {
@@ -108,6 +110,12 @@ namespace defSLAM
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
                       const double &timestamp);
+
+    // Proccess the given monocular frame and optionally imu data
+    // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
+    // Returns the camera pose (empty if tracking fails).
+    cv::Mat TrackMonocularIMU(const cv::Mat &im, const double &timestamp,
+        const vector<Point>& vImuMeas = vector<Point>(), string filename="");
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to
