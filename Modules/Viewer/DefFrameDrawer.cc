@@ -37,7 +37,7 @@ namespace defSLAM
    * inspired in:
    * https://www.rojtberg.net/929/how-to-draw-a-line-interpolating-2-colors-with-opencv/
    * ********/
-  void line2(Mat &img, const Point &start, const Point &end, const Scalar &c1,
+  void line2(Mat &img, const cv::Point &start, const cv::Point &end, const Scalar &c1,
              const Scalar &c2)
   {
     LineIterator iter(img, start, end, 8);
