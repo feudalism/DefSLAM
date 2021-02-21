@@ -237,7 +237,7 @@ namespace defSLAM
 
       //Create the map
       mpMap = new DefMap();
-      // mpMap->SetInertialSensor();
+      mpMap->SetInertialSensor();
 
       //Create Drawers. These are used by the Viewer
       mpFrameDrawer = new DefFrameDrawer(mpMap);
@@ -288,8 +288,8 @@ namespace defSLAM
       mpLocalMapper->SetTracker(mpTracker);
       mpLocalMapper->SetLoopCloser(mpLoopCloser);
 
-      mpLoopCloser->SetTracker(mpTracker);
-      mpLoopCloser->SetLocalMapper(mpLocalMapper);
+      // mpLoopCloser->SetTracker(mpTracker);
+      // mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
       // Fix verbosity
       Verbose::SetTh(Verbose::VERBOSITY_QUIET);
