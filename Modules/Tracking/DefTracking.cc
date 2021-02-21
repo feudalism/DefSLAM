@@ -979,7 +979,7 @@ namespace defSLAM
 
       lastID = mCurrentFrame->mnId;
       
-      Track();
+      TrackWithImu();
 
       std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
@@ -1101,5 +1101,170 @@ namespace defSLAM
       return true;
   }
 
+  // Main function of tracking, using IMU
+  void DefTracking::TrackWithImu()
+  {
+    if(mpLocalMapper->mbBadImu)
+    {
+        cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
+        mpSystem->Reset();
+        return;
+    }
+    
+    if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
+        static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
+    
+    if (mState == NO_IMAGES_YET)
+      mState = NOT_INITIALIZED;
+    
+    mLastProcessedState = mState;
+    
+    // Prevent changes to map
+    unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+
+    if (mState == NOT_INITIALIZED)
+    {
+      this->MonocularInitialization();
+      if (mState != OK)
+        return;
+    }
+    else
+    {
+      // System is initialized. Track Frame.
+      bool bOK;
+      // Initial camera pose estimation using motion model or relocalization (if
+      // tracking is lost)
+      if (!mbOnlyTracking)
+      {
+        bOK = TrackWithMotionModel();
+        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+        // If we have an initial estimation of the camera pose and matching. Track
+        // the local map.
+        if (bOK)
+        {
+
+          if ((static_cast<DefLocalMapping *>(mpLocalMapper)
+                   ->updateTemplate()))
+          {
+            mpReferenceKF =
+                static_cast<DefMap *>(mpMap)->GetTemplate()->kf;
+
+            Optimizer::DefPoseOptimization(
+                mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(), 0,
+                LocalZone);
+
+            if (viewerOn)
+            {
+              static_cast<DefMapDrawer *>(mpMapDrawer)
+                  ->updateTemplateAtRest();
+            }
+          }
+          bOK = TrackLocalMap();
+        }
+      }
+      else
+      {
+
+        bOK = this->OnlyLocalisation();
+        // If we have an initial estimation of the camera pose and matching. Track
+        // the local map.
+        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+
+        // mbVO true means that there are few matches to MapPoints in the map. We
+        // cannot retrieve
+        // a local map and therefore we do not perform TrackLocalMap(). Once the
+        // system relocalizes
+        // the camera we will use the local map again.
+        if (bOK && !mbVO)
+          bOK = TrackLocalMap();
+      }
+
+      if (bOK)
+      {
+        mState = OK;
+
+        // Update motion model
+        if (!mLastFrame.mTcw.empty())
+        {
+          cv::Mat LastTwc = cv::Mat::eye(4, 4, CV_32F);
+          mLastFrame.GetRotationInverse().copyTo(
+              LastTwc.rowRange(0, 3).colRange(0, 3));
+          mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
+          mVelocity = mCurrentFrame->mTcw * LastTwc;
+        }
+        else
+          mVelocity = cv::Mat();
+
+        if (viewerOn)
+        {
+          mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+          mpFrameDrawer->Update(this);
+          mpMapDrawer->UpdatePoints(mCurrentFrame);
+          static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplate();
+        }
+
+        // Clean VO matches
+        CleanMatches();
+        // Erase Temporal points;
+        EraseTemporalPoints();
+
+// Check if we need to insert a new keyframe
+        if ((mCurrentFrame->mnId % 10) < 1)
+        {
+          this->CreateNewKeyFrame();
+        }
+        
+        // We allow points with high innovation (considererd outliers by the Huber
+        // Function) pass to the new keyframe, so that bundle adjustment will
+        // finally decide if they are outliers or not. We don't want next frame to
+        // estimate its position with those points so we discard them in the
+        // frame.
+        for (size_t i = 0; i < size_t(mCurrentFrame->N); i++)
+        {
+          if (mCurrentFrame->mvpMapPoints[i] && mCurrentFrame->mvbOutlier[i])
+          {
+            mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
+          }
+        }
+      }
+
+      else
+      {
+        mState = LOST;
+        this->status << mCurrentFrame->mTimeStamp << " " << 1 << std::endl;
+        if (viewerOn)
+        {
+          mpFrameDrawer->Update(this);
+          mpMapDrawer->UpdatePoints(mCurrentFrame);
+        }
+
+        cout << "Track lost soon after initialisation, reseting..." << endl;
+        mpSystem->Reset();
+        return;
+      }
+
+      if (!mCurrentFrame->mpReferenceKF)
+        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+      mLastFrame = Frame(*mCurrentFrame);
+    }
+
+    if (!mCurrentFrame->mTcw.empty())
+    {
+      cv::Mat Tcr =
+          mCurrentFrame->mTcw * mCurrentFrame->mpReferenceKF->GetPoseInverse();
+      mlRelativeFramePoses.push_back(Tcr);
+      mlpReferences.push_back(mpReferenceKF);
+      mlFrameTimes.push_back(mCurrentFrame->mTimeStamp);
+      mlbLost.push_back(mState == LOST);
+    }
+    else
+    {
+      // This can happen if tracking is lost
+      mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
+      mlpReferences.push_back(mlpReferences.back());
+      mlFrameTimes.push_back(mlFrameTimes.back());
+      mlbLost.push_back(mState == LOST);
+    }
+  }
 
 } // namespace defSLAM
