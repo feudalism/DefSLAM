@@ -39,6 +39,9 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 #include "ImuTypes.h"
+#include "ImuFrame.h"
+#include "Pinhole.h"
+#include "ORBextractor.h"
 
 namespace defSLAM
 {
@@ -51,6 +54,10 @@ namespace defSLAM
   using ORB_SLAM3::IMU::Preintegrated;
   using ORB_SLAM3::IMU::GRAVITY_VALUE;
   using ORB_SLAM3::IMU::NormalizeRotation;
+  using ORB_SLAM3::ImuFrame;
+  using ORB_SLAM3::Pinhole;
+  
+  using ORB_SLAM2::ORBextractor;
 
   // Constructor
   DefTracking::DefTracking(System *pSys, ORBVocabulary *pVoc,
@@ -61,8 +68,37 @@ namespace defSLAM
                            const int sensor, bool viewerOn)
       : Tracking(pSys, pVoc, pFrameDrawer, pMapDrawer, pMap, pKFDB,
                  strSettingPath, sensor, viewerOn)
+      
   {
+    mTrackedFr = 0;
+    mbStep = false;
+    mbMapUpdated = false;
+    time_recently_lost = 5.0;
+    mnInitialFrameId = 0;
+    mbCreatedMap = false;
+    mnFirstFrameId = 0;
+    mpCamera2 = nullptr;
+    
+    // Define camera -- OS3
+    float fx = mK.at<float>(0, 0);
+    float fy = mK.at<float>(1, 1);
+    float cx = mK.at<float>(0, 2);
+    float cy = mK.at<float>(1, 2);
+    vector<float> vCamCalib{fx,fy,cx,cy};
+    mpCamera = new Pinhole(vCamCalib);
+
+    // Initial ORB extractor -- OS3
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+    int nFeatures = fSettings["ORBextractor.nFeatures"];
+    float fScaleFactor = fSettings["ORBextractor.scaleFactor"];
+    int nLevels = fSettings["ORBextractor.nLevels"];
+    int fIniThFAST = fSettings["ORBextractor.iniThFAST"];
+    int fMinThFAST = fSettings["ORBextractor.minThFAST"];
+    if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
+        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+      
+    initID = 0; lastID = 0;
+        
     RegLap = fSettings["Regularizer.laplacian"];
     RegInex = fSettings["Regularizer.Inextensibility"];
     RegTemp = fSettings["Regularizer.temporal"];
