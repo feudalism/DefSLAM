@@ -78,6 +78,13 @@ namespace defSLAM
     // Set the reference keyframe or the keyframe used to
     // create the template
     void setLastKFTemplate(KeyFrame *);
+    
+    // OS3 IMU fcns
+    bool IsInertial();
+    void SetInertialSensor();
+    
+    void SetImuInitialized();
+    bool isImuInitialized();
 
   public:
     bool ThereIsATemplate;

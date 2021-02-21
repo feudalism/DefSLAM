@@ -116,4 +116,30 @@ namespace defSLAM
     std::unique_lock<std::mutex> lck(MutexKf);
     lastKfTemplate_ = kf;
   }
+  
+  bool DefMap::IsInertial()
+  {
+      unique_lock<mutex> lock(mMutexMap);
+      return mbIsInertial;
+  }
+  
+  void DefMap::SetInertialSensor()
+  {
+      unique_lock<mutex> lock(mMutexMap);
+      mbIsInertial = true;
+  }
+
+  void DefMap::SetImuInitialized()
+  {
+      unique_lock<mutex> lock(mMutexMap);
+      mbImuInitialized = true;
+  }
+
+  bool DefMap::isImuInitialized()
+  {
+      unique_lock<mutex> lock(mMutexMap);
+      return mbImuInitialized;
+  }
+
+
 } // namespace defSLAM
