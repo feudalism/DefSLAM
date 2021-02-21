@@ -50,6 +50,8 @@ namespace defSLAM
   class DefMapDrawer;
   class Node;
   
+  using ORB_SLAM3::IMU::Bias;
+  using ORB_SLAM3::IMU::Calib;
   using ORB_SLAM3::IMU::Point;
   using ORB_SLAM3::IMU::Preintegrated;
   using ORB_SLAM3::IMU::GRAVITY_VALUE;
@@ -98,7 +100,21 @@ namespace defSLAM
         mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
       
     initID = 0; lastID = 0;
-        
+    
+    // Load IMU parameters
+    bool b_parse_imu = true;
+    if(sensor==System::IMU_MONOCULAR || sensor==System::IMU_STEREO) {
+        b_parse_imu = ParseIMUParamFile(fSettings);
+        if(!b_parse_imu) {
+            std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
+        }
+
+        mnFramesToResetIMU = mMaxFrames;
+    }
+    
+    mbInitWith3KFs = false;
+    mnNumDataset = 0;
+    
     RegLap = fSettings["Regularizer.laplacian"];
     RegInex = fSettings["Regularizer.Inextensibility"];
     RegTemp = fSettings["Regularizer.temporal"];
@@ -982,6 +998,108 @@ namespace defSLAM
       return mCurrentFrame->mTcw.clone();
   }
 
+  bool DefTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
+  {
+      bool b_miss_params = false;
+
+      cv::Mat Tbc;
+      cv::FileNode node = fSettings["Tbc"];
+      if(!node.empty())
+      {
+          Tbc = node.mat();
+          if(Tbc.rows != 4 || Tbc.cols != 4)
+          {
+              std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*" << std::endl;
+              b_miss_params = true;
+          }
+      }
+      else
+      {
+          std::cerr << "*Tbc matrix doesn't exist*" << std::endl;
+          b_miss_params = true;
+      }
+
+      cout << endl;
+
+      cout << "Left camera to Imu Transform (Tbc): " << endl << Tbc << endl;
+
+      float freq, Ng, Na, Ngw, Naw;
+
+      node = fSettings["IMU.Frequency"];
+      if(!node.empty() && node.isInt())
+      {
+          freq = node.operator int();
+      }
+      else
+      {
+          std::cerr << "*IMU.Frequency parameter doesn't exist or is not an integer*" << std::endl;
+          b_miss_params = true;
+      }
+
+      node = fSettings["IMU.NoiseGyro"];
+      if(!node.empty() && node.isReal())
+      {
+          Ng = node.real();
+      }
+      else
+      {
+          std::cerr << "*IMU.NoiseGyro parameter doesn't exist or is not a real number*" << std::endl;
+          b_miss_params = true;
+      }
+
+      node = fSettings["IMU.NoiseAcc"];
+      if(!node.empty() && node.isReal())
+      {
+          Na = node.real();
+      }
+      else
+      {
+          std::cerr << "*IMU.NoiseAcc parameter doesn't exist or is not a real number*" << std::endl;
+          b_miss_params = true;
+      }
+
+      node = fSettings["IMU.GyroWalk"];
+      if(!node.empty() && node.isReal())
+      {
+          Ngw = node.real();
+      }
+      else
+      {
+          std::cerr << "*IMU.GyroWalk parameter doesn't exist or is not a real number*" << std::endl;
+          b_miss_params = true;
+      }
+
+      node = fSettings["IMU.AccWalk"];
+      if(!node.empty() && node.isReal())
+      {
+          Naw = node.real();
+      }
+      else
+      {
+          std::cerr << "*IMU.AccWalk parameter doesn't exist or is not a real number*" << std::endl;
+          b_miss_params = true;
+      }
+
+      if(b_miss_params)
+      {
+          return false;
+      }
+
+      const float sf = sqrt(freq);
+      cout << endl;
+      cout << "IMU frequency: " << freq << " Hz" << endl;
+      cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
+      cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
+      cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
+      cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
+
+      mpImuCalib = new Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+
+      mpImuPreintegratedFromLastKF = new Preintegrated(Bias(),*mpImuCalib);
+
+
+      return true;
+  }
 
 
 } // namespace defSLAM

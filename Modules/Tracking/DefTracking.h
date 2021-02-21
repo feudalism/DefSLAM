@@ -63,6 +63,9 @@ namespace defSLAM
                 const int sensor = ORB_SLAM2::System::MONOCULAR,
                 bool viewerOn = false);
                 
+    // Parse config file
+    bool ParseIMUParamFile(cv::FileStorage &fSettings);
+                
     //Main function of tracking where the map is considered deformable.
     virtual bool TrackLocalMap();
 
