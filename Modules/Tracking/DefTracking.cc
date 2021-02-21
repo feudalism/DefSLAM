@@ -1111,8 +1111,8 @@ namespace defSLAM
         return;
     }
     
-    if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
-        static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
+    // if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
+        // static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
     
     if (mState == NO_IMAGES_YET)
       mState = NOT_INITIALIZED;
