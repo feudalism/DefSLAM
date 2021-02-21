@@ -952,26 +952,25 @@ namespace defSLAM
           cv::cvtColor(im, mImGray, cv::COLOR_BGRA2GRAY);
       }
 
-      // if (mSensor == System::MONOCULAR)
-      // {
-          // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
-              // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-          // else
-              // mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-      // }
-      // else if(mSensor == System::IMU_MONOCULAR)
-      // {
-          // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-          // {
-              // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
-          // }
-          // else
-              // mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
-      // }
-      mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
-                              mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
-      // mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
-                              // mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
+      if (mSensor == System::MONOCULAR)
+      {
+          if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+              // mCurrentFrame = new Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+              mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+          else
+              mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+      }
+      else if(mSensor == System::IMU_MONOCULAR) {
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+          // mCurrentFrame = new ImuFrame(mImGray, timestamp, mpIniORBextractor,
+                                  // mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+          mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
+                                  mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+        else
+          mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
+                                  mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth,
+                                  &mLastFrame,*mpImuCalib);
+      }
 
       if (mState==NO_IMAGES_YET)
           t0=timestamp;
