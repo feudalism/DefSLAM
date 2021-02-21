@@ -91,6 +91,7 @@ namespace defSLAM
   protected:
     // Main function of tracking.
     void Track() override;
+    void TrackWithImu();
 
     // Remove matches of the current keyframe.
     virtual void CleanMatches();
