@@ -14,13 +14,21 @@
 
 namespace ORB_SLAM3
 {
+  using IMU::Bias;
+  
   ImuFrame::ImuFrame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
                 GeometricCamera* pCamera,
                 cv::Mat &distCoef, const float &bf, const float &thDepth,
                 Frame* pPrevF, const Calib &ImuCalib)
        : Frame(imGray, timeStamp, extractor, voc, pCamera,
-                distCoef, bf, thDepth, pPrevF, ImuCalib)
-  {
+                distCoef, bf, thDepth, pPrevF, ImuCalib) {
     ImGray = imGray.clone();
   }
+  
+  void ImuFrame::SetNewBias(const Bias &b) {
+    mImuBias = b;
+    if(mpImuPreintegrated)
+        mpImuPreintegrated->SetNewBias(b);
+  }
+
 }
