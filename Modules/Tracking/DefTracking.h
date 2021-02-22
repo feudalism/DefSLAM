@@ -85,6 +85,8 @@ namespace defSLAM
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
                                            
+    KeyFrame* GetLastKeyFrame() { return mpLastKeyFrame; }
+                                           
     void Reset();
     void ResetActiveMap();
     

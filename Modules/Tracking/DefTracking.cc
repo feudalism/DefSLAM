@@ -1107,7 +1107,7 @@ namespace defSLAM
     if(mpLocalMapper->mbBadImu)
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-        mpSystem->Reset();
+        mpSystem->ResetActiveMap();
         return;
     }
     
