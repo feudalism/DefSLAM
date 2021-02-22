@@ -148,6 +148,7 @@ namespace defSLAM
 
     // Reset the system (clear map)
     void Reset();
+    void ResetActiveMap();
 
     // Restart with a different thickening or propagation band size
     void Restart(uint localzone, uint propagationzone);
