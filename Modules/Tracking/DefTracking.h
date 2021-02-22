@@ -86,6 +86,7 @@ namespace defSLAM
                                            cv::Mat _mask = cv::Mat());
                                            
     void Reset();
+    void ResetMap();
     
     // OS3
     void GrabImuData(const Point &imuMeasurement);
