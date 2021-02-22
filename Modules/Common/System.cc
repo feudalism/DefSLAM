@@ -348,7 +348,7 @@ namespace defSLAM
       unique_lock<mutex> lock(mMutexReset);
       if (mbReset)
       {
-        mpTracker->Reset();
+        static_cast<DefTracking *>(mpTracker)->Reset();
         mbReset = false;
       }
     }
@@ -635,7 +635,7 @@ namespace defSLAM
           unique_lock<mutex> lock(mMutexReset);
           if(mbReset)
           {
-              mpTracker->Reset();
+              static_cast<DefTracking *>(mpTracker)->Reset();
               mbReset = false;
               mbResetActiveMap = false;
           }

@@ -84,6 +84,9 @@ namespace defSLAM
                                            const cv::Mat &imDepth,
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
+                                           
+    void Reset();
+    
     // OS3
     void GrabImuData(const Point &imuMeasurement);
     cv::Mat DefGrabImageMonocular(const cv::Mat &im, const double &timestamp);

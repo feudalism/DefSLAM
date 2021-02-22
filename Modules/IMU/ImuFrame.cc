@@ -16,6 +16,8 @@ namespace ORB_SLAM3
 {
   using IMU::Bias;
   
+  ImuFrame::ImuFrame() : Frame() {}
+  
   ImuFrame::ImuFrame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc,
                 GeometricCamera* pCamera,
                 cv::Mat &distCoef, const float &bf, const float &thDepth,
