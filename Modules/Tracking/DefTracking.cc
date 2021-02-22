@@ -1267,4 +1267,16 @@ namespace defSLAM
     }
   }
 
+  void DefTracking::Reset()
+  {
+    Tracking::Reset();
+    
+    mCurrentFrame = new ImuFrame();
+    mnLastRelocFrameId = 0;
+    mLastFrame = ImuFrame();
+    mpReferenceKF = static_cast<KeyFrame*>(NULL);
+    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
+    mvIniMatches.clear();
+  }
+    
 } // namespace defSLAM

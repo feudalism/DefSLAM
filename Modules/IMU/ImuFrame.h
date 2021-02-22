@@ -24,6 +24,8 @@ namespace ORB_SLAM3{
   
   class ImuFrame : public Frame {
     public:
+      ImuFrame();
+        
       // Constructor for Monocular cameras.
       ImuFrame(const cv::Mat &imGray, const double &timeStamp,
         ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera,
