@@ -239,7 +239,7 @@ namespace defSLAM
 
       //Create the map
       mpMap = new DefMap();
-      // mpMap->SetInertialSensor();
+      static_cast<DefMap *>(mpMap)->SetInertialSensor();
 
       //Create Drawers. These are used by the Viewer
       mpFrameDrawer = new DefFrameDrawer(mpMap);
