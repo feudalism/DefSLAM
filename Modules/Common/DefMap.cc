@@ -99,6 +99,8 @@ namespace defSLAM
     mnMaxKFid = 0;
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
+    mbIMU_BA1 = false;
+    mbIMU_BA2 = false;
   }
 
   // Return the reference keyframe or the keyframe used to
