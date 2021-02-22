@@ -1272,11 +1272,48 @@ namespace defSLAM
     Tracking::Reset();
     
     mCurrentFrame = new ImuFrame();
+    mLastFrame = ImuFrame();
     mnLastRelocFrameId = 0;
+    mpReferenceKF = static_cast<KeyFrame*>(NULL);
+    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
+    mvIniMatches.clear();
+  }
+  
+  void DefTracking::ResetActiveMap()
+  {
+    Tracking::Reset();
+    
+    mnLastInitFrameId = Frame::nNextId;
+    mnLastRelocFrameId = mnLastInitFrameId;
+    
+    // // Set frames to lost 
+    // list<bool> lbLost;
+    // unsigned int index = mnFirstFrameId;
+
+    // int num_lost = 0;
+
+    // for(list<bool>::iterator ilbL = mlbLost.begin(); ilbL != mlbLost.end(); ilbL++)
+    // {
+        // if(index < mnInitialFrameId)
+            // lbLost.push_back(*ilbL);
+        // else
+        // {
+            // lbLost.push_back(true);
+            // num_lost += 1;
+        // }
+        // index++;
+    // }
+    // cout << num_lost << " Frames set to lost" << endl;
+    // mlbLost = lbLost;
+    
+    mnInitialFrameId = mCurrentFrame->mnId;
+    mnLastRelocFrameId = mCurrentFrame->mnId;
+    
+    mCurrentFrame = new ImuFrame();
     mLastFrame = ImuFrame();
     mpReferenceKF = static_cast<KeyFrame*>(NULL);
     mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
     mvIniMatches.clear();
   }
-    
+
 } // namespace defSLAM

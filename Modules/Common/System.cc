@@ -560,6 +560,12 @@ namespace defSLAM
     unique_lock<mutex> lock(mMutexReset);
     mbReset = true;
   }
+  
+  void System::ResetActiveMap()
+  {
+    unique_lock<mutex> lock(mMutexReset);
+    mbResetActiveMap = true;
+  }
 
   void System::Shutdown()
   {
@@ -639,12 +645,12 @@ namespace defSLAM
               mbReset = false;
               mbResetActiveMap = false;
           }
-          // else if(mbResetActiveMap)
-          // {
-              // cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-              // mpTracker->ResetActiveMap();
-              // mbResetActiveMap = false;
-          // }
+          else if(mbResetActiveMap)
+          {
+              cout << "SYSTEM-> Reseting active map in monocular case" << endl;
+              static_cast<DefTracking *>(mpTracker)->ResetActiveMap();
+              mbResetActiveMap = false;
+          }
       }
 
       if (mSensor == System::IMU_MONOCULAR)
