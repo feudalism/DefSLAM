@@ -256,8 +256,8 @@ namespace defSLAM
       //Initialize the Local Mapping thread and launch
       // mpLocalMapper = new DefLocalMapping(this, mpMap,
         // mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR, strSettingsFile);
-      mpLocalMapper = new DefLocalMapping(
-        mpMap, strSettingsFile);
+      mpLocalMapper = new DefLocalMapping(this, mpMap, mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR,
+          strSettingsFile);
       mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
       
       mpLocalMapper->mInitFr = initFr;

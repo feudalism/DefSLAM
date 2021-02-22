@@ -64,6 +64,42 @@ namespace defSLAM
     warpDB_ = new SchwarpDatabase(reg_);
   }
 
+  DefLocalMapping::DefLocalMapping(System* pSys, Map *pMap,
+      const float bMonocular, bool bInertial,
+      const string &strSettingPath) :
+      LocalMapping(pMap, nullptr, bMonocular),
+        createTemplate_(false),
+        pointsToTemplate_(100),
+        chiLimit_(0.07)
+  {
+    mpSystem = pSys;
+    mbInertial = bInertial;
+    mbResetRequestedActiveMap = false;
+    bInitializing = false;
+    mbNewInit = false;
+    mIdxInit = 0;
+    mScale = 1.0;
+    mInitSect = 0;
+    mbNotBA1 = true;
+    mbNotBA2 = true;
+    mIdxIteration = 0;
+    infoInertial = Eigen::MatrixXd::Zero(9,9);
+    
+    mnMatchesInliers = 0;
+    mbBadImu = false;
+    mTinit = 0.f;
+    mNumLM = 0;
+    mNumKFCulling=0;
+    
+    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+    pointsToTemplate_ = fSettings["LocalMapping.pointsToTemplate"];
+    chiLimit_ = fSettings["LocalMapping.chiLimit"];
+    double reg_ = fSettings["LocalMapping.Schwarp.Regularizer"];
+    bendingReg_ = fSettings["LocalMapping.Bending"];
+    saveResults_ = bool(int(fSettings["Viewer.SaveResults"]));
+    warpDB_ = new SchwarpDatabase(reg_);
+  }
+
   /***********************************
    * Destructor of DefLocalMapping. Just to remove the SchwarpDatabase.
    *********************/
@@ -451,6 +487,14 @@ namespace defSLAM
       mlNewKeyFrames.clear();
       mlpRecentAddedMapPoints.clear();
       mbResetRequested = false;
+
+      // Inertial parameters
+      mTinit = 0.f;
+      mbNotBA2 = true;
+      mbNotBA1 = true;
+      mbBadImu=false;
+
+      mIdxInit=0;
     }
   }
 } // namespace defSLAM

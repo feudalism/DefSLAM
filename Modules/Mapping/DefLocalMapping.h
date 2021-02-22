@@ -48,6 +48,7 @@ namespace defSLAM
    *  bendingReg_ : Weight for the beding regularizer in Shape-from-normals.
    *********************/
     DefLocalMapping(Map *pMap, const string &strSettingPath);
+    DefLocalMapping(System* pSys, Map *pMap, const float bMonocular, bool bInertial, const string &strSettingPath);
 
     /***********************************
    * Destructor of DefLocalMapping. Just to remove the SchwarpDatabase.
