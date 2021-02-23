@@ -209,8 +209,8 @@ namespace ORB_SLAM2
   {
     unique_lock<mutex> lock(mMutex);
     pTracker->mImRGB.copyTo(mIm);
-    mvCurrentKeys = pTracker->mCurrentFrame->mvKeys;
-    this->mvCurrentKeysCorr = pTracker->mCurrentFrame->mvKeysUnCorr;
+    mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
+    this->mvCurrentKeysCorr = pTracker->mCurrentFrame.mvKeysUnCorr;
 
     N = mvCurrentKeys.size();
     this->N2 = mvCurrentKeysCorr.size();
@@ -230,10 +230,10 @@ namespace ORB_SLAM2
     {
       for (int i = 0; i < N; i++)
       {
-        MapPoint *pMP = pTracker->mCurrentFrame->mvpMapPoints[i];
+        MapPoint *pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
         if (pMP)
         {
-          if (!pTracker->mCurrentFrame->mvbOutlier[i])
+          if (!pTracker->mCurrentFrame.mvbOutlier[i])
           {
             if (pMP->Observations() > 0)
               mvbMap[i] = true;
@@ -244,7 +244,7 @@ namespace ORB_SLAM2
       }
       for (int i = 0; i < N2; i++)
       {
-        MapPoint *pMP = pTracker->mCurrentFrame->mvpMapPointsCorr[i];
+        MapPoint *pMP = pTracker->mCurrentFrame.mvpMapPointsCorr[i];
         if (pMP)
         {
           this->mvbMapcorr[i] = true;

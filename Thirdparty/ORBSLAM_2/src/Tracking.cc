@@ -215,13 +215,13 @@ namespace ORB_SLAM2
       }
     }
 
-    mCurrentFrame = new Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft,
+    mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                               mpORBextractorRight, mpORBVocabulary, mK, mDistCoef,
                               mbf, mThDepth, imRectLeft);
 
     Track();
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD,
@@ -248,12 +248,12 @@ namespace ORB_SLAM2
     if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
       imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
 
-    mCurrentFrame = new Frame(mImGray, imDepth, timestamp, mpORBextractorLeft,
+    mCurrentFrame = Frame(mImGray, imDepth, timestamp, mpORBextractorLeft,
                               mpORBVocabulary, mK, mDistCoef, mbf, mThDepth);
 
     Track();
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im,
@@ -278,12 +278,12 @@ namespace ORB_SLAM2
         cv::cvtColor(im, mImGray, cv::COLOR_BGRA2GRAY);
     }
 
-    mCurrentFrame = new Frame(mImGray, timestamp, mpORBextractorLeft,
+    mCurrentFrame = Frame(mImGray, timestamp, mpORBextractorLeft,
                               mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, im);
 
     Track();
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   cv::Mat Tracking::GrabImageMonocular(const cv::Mat &imRectLeft,
@@ -325,13 +325,13 @@ namespace ORB_SLAM2
       cv::cvtColor(imRectLeft, mImRGB, cv::COLOR_GRAY2RGB);
     }
 
-    mCurrentFrame = new defSLAM::GroundTruthFrame(
+    mCurrentFrame = defSLAM::GroundTruthFrame(
         mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight,
         mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, imRectLeft);
 
     Track();
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   cv::Mat Tracking::GrabImageMonocularGT(const cv::Mat &imRectLeft,
@@ -373,7 +373,7 @@ namespace ORB_SLAM2
       cv::cvtColor(imRectLeft, mImRGB, cv::COLOR_GRAY2RGB);
     }
 
-    mCurrentFrame = new defSLAM::GroundTruthFrame(mImGray, imGrayRight, timestamp, mpORBextractorLeft,
+    mCurrentFrame = defSLAM::GroundTruthFrame(mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                                                   mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, imRectLeft, _mask);
 
     Track();
@@ -383,15 +383,15 @@ namespace ORB_SLAM2
     if ((mState == eTrackingState::OK) && (saveResults))
     {
       float scale =
-          static_cast<defSLAM::GroundTruthFrame *>(mCurrentFrame)
+          static_cast<defSLAM::GroundTruthFrame *>(&mCurrentFrame)
               ->Estimate3DScale(
                   mpMap);
-      scalefile << mCurrentFrame->mTimeStamp << " " << scale << std::endl;
-      static_cast<defSLAM::GroundTruthFrame *>(mCurrentFrame)
+      scalefile << mCurrentFrame.mTimeStamp << " " << scale << std::endl;
+      static_cast<defSLAM::GroundTruthFrame *>(&mCurrentFrame)
           ->Estimate3DError(mpMap, scale);
-      mpMapDrawer->UpdatePoints(mCurrentFrame, scale);
+      mpMapDrawer->UpdatePoints(&mCurrentFrame, scale);
     }
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   cv::Mat Tracking::GrabImageMonocularCTGT(const cv::Mat &imRectLeft,
@@ -429,7 +429,7 @@ namespace ORB_SLAM2
       cv::cvtColor(imRectLeft, mImRGB, cv::COLOR_GRAY2RGB);
     }
 
-    mCurrentFrame = new defSLAM::GroundTruthFrame(
+    mCurrentFrame = defSLAM::GroundTruthFrame(
         mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef,
         mbf, mThDepth, imRectLeft, imDepth, true, _mask);
 
@@ -438,19 +438,19 @@ namespace ORB_SLAM2
     if ((mState == eTrackingState::OK) && (true))
     {
       float scale =
-          static_cast<defSLAM::GroundTruthFrame *>(mCurrentFrame)->Estimate3DScale(mpMap);
-      scalefile << mCurrentFrame->mTimeStamp << " " << scale << std::endl;
-      double error = static_cast<defSLAM::GroundTruthFrame *>(mCurrentFrame)
+          static_cast<defSLAM::GroundTruthFrame *>(&mCurrentFrame)->Estimate3DScale(mpMap);
+      scalefile << mCurrentFrame.mTimeStamp << " " << scale << std::endl;
+      double error = static_cast<defSLAM::GroundTruthFrame *>(&mCurrentFrame)
                          ->Estimate3DError(mpMap, scale);
 
       if (viewerOn)
       {
-        mpMapDrawer->UpdatePoints(mCurrentFrame, scale);
+        mpMapDrawer->UpdatePoints(&mCurrentFrame, scale);
         this->mpFrameDrawer->SetError(error);
       }
     }
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   bool Tracking::RelocateImageMonocular(const cv::Mat &im,
@@ -474,16 +474,16 @@ namespace ORB_SLAM2
     }
     if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET)
       mCurrentFrame =
-          new Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mK,
+          Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mK,
                     mDistCoef, mbf, mThDepth, im);
     else
       mCurrentFrame =
-          new Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK,
+          Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK,
                     mDistCoef, mbf, mThDepth, im);
 
     bool bOK = Relocalization();
     mpFrameDrawer->Update(this);
-    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
     return bOK;
   }
@@ -502,7 +502,7 @@ namespace ORB_SLAM2
 
     if (mState == NOT_INITIALIZED)
     {
-      if (mCurrentFrame->StereoAvailable)
+      if (mCurrentFrame.StereoAvailable)
         StereoInitialization();
       else
         MonocularInitialization();
@@ -528,7 +528,7 @@ namespace ORB_SLAM2
         bOK = this->OnlyLocalisation();
       }
 
-      mCurrentFrame->mpReferenceKF = mpReferenceKF;
+      mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
       // If we have an initial estimation of the camera pose and matching. Track
       // the local map.
@@ -553,12 +553,12 @@ namespace ORB_SLAM2
       if (bOK)
       {
         mState = OK;
-        this->status << mCurrentFrame->mTimeStamp << " " << 0 << std::endl;
+        this->status << mCurrentFrame.mTimeStamp << " " << 0 << std::endl;
       }
       else
       {
         mState = LOST;
-        this->status << mCurrentFrame->mTimeStamp << " " << 1 << std::endl;
+        this->status << mCurrentFrame.mTimeStamp << " " << 1 << std::endl;
       }
 
       // Update drawer
@@ -574,22 +574,22 @@ namespace ORB_SLAM2
           mLastFrame.GetRotationInverse().copyTo(
               LastTwc.rowRange(0, 3).colRange(0, 3));
           mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
-          mVelocity = mCurrentFrame->mTcw * LastTwc;
+          mVelocity = mCurrentFrame.mTcw * LastTwc;
         }
         else
           mVelocity = cv::Mat();
 
-        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
         // Clean VO matches
-        for (int i = 0; i < mCurrentFrame->N; i++)
+        for (int i = 0; i < mCurrentFrame.N; i++)
         {
-          MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+          MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
           if (pMP)
             if (pMP->Observations() < 1)
             {
-              mCurrentFrame->mvbOutlier[i] = false;
-              mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+              mCurrentFrame.mvbOutlier[i] = false;
+              mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
             }
         }
 
@@ -604,7 +604,7 @@ namespace ORB_SLAM2
         mlpTemporalPoints.clear();
 
         // Check if we need to insert a new keyframe
-        if ((mCurrentFrame->mnId % 4) < 1)
+        if ((mCurrentFrame.mnId % 4) < 1)
           CreateNewKeyFrame();
 
         // We allow points with high innovation (considererd outliers by the Huber
@@ -613,11 +613,11 @@ namespace ORB_SLAM2
         // if they are outliers or not. We don't want next frame to estimate its
         // position
         // with those points so we discard them in the frame.
-        for (int i = 0; i < mCurrentFrame->N; i++)
+        for (int i = 0; i < mCurrentFrame.N; i++)
         {
-          if (mCurrentFrame->mvpMapPoints[i] && mCurrentFrame->mvbOutlier[i])
+          if (mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
           {
-            mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+            mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
           }
         }
         //    MapPointFile << std::endl;
@@ -634,20 +634,20 @@ namespace ORB_SLAM2
         }
       }
 
-      if (!mCurrentFrame->mpReferenceKF)
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+      if (!mCurrentFrame.mpReferenceKF)
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
-      mLastFrame = Frame(*mCurrentFrame);
+      mLastFrame = Frame(mCurrentFrame);
     }
     // Store frame pose information to retrieve the complete camera trajectory
     // afterwards.
-    if (!mCurrentFrame->mTcw.empty())
+    if (!mCurrentFrame.mTcw.empty())
     {
       cv::Mat Tcr =
-          mCurrentFrame->mTcw * mCurrentFrame->mpReferenceKF->GetPoseInverse();
+          mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr);
       mlpReferences.push_back(mpReferenceKF);
-      mlFrameTimes.push_back(mCurrentFrame->mTimeStamp);
+      mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
       mlbLost.push_back(mState == LOST);
     }
     else
@@ -703,26 +703,26 @@ namespace ORB_SLAM2
         if (!mVelocity.empty())
         {
           bOKMM = TrackWithMotionModel();
-          vpMPsMM = mCurrentFrame->mvpMapPoints;
-          vbOutMM = mCurrentFrame->mvbOutlier;
-          TcwMM = mCurrentFrame->mTcw.clone();
+          vpMPsMM = mCurrentFrame.mvpMapPoints;
+          vbOutMM = mCurrentFrame.mvbOutlier;
+          TcwMM = mCurrentFrame.mTcw.clone();
         }
         bOKReloc = Relocalization();
 
         if (bOKMM && !bOKReloc)
         {
-          mCurrentFrame->SetPose(TcwMM);
-          mCurrentFrame->mvpMapPoints = vpMPsMM;
-          mCurrentFrame->mvbOutlier = vbOutMM;
+          mCurrentFrame.SetPose(TcwMM);
+          mCurrentFrame.mvpMapPoints = vpMPsMM;
+          mCurrentFrame.mvbOutlier = vbOutMM;
 
           if (mbVO)
           {
-            for (int i = 0; i < mCurrentFrame->N; i++)
+            for (int i = 0; i < mCurrentFrame.N; i++)
             {
-              if (mCurrentFrame->mvpMapPoints[i] &&
-                  !mCurrentFrame->mvbOutlier[i])
+              if (mCurrentFrame.mvpMapPoints[i] &&
+                  !mCurrentFrame.mvbOutlier[i])
               {
-                mCurrentFrame->mvpMapPoints[i]->IncreaseFound();
+                mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
               }
             }
           }
@@ -745,7 +745,7 @@ namespace ORB_SLAM2
     bool bOK;
     if (mState == OK)
     {
-      if (mVelocity.empty() || mCurrentFrame->mnId < mnLastRelocFrameId + 2)
+      if (mVelocity.empty() || mCurrentFrame.mnId < mnLastRelocFrameId + 2)
       {
         bOK = TrackReferenceKeyFrame();
       }
@@ -766,24 +766,24 @@ namespace ORB_SLAM2
 
   void Tracking::StereoInitialization()
   {
-    if (mCurrentFrame->N > 100)
+    if (mCurrentFrame.N > 100)
     {
       // Set Frame pose to the origin
-      mCurrentFrame->SetPose(cv::Mat::eye(4, 4, CV_32F));
+      mCurrentFrame.SetPose(cv::Mat::eye(4, 4, CV_32F));
 
       // Create KeyFrame
-      KeyFrame *pKFini = new KeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB);
+      KeyFrame *pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
       // Insert KeyFrame in the map
       mpMap->AddKeyFrame(pKFini);
 
       // Create MapPoints and asscoiate to KeyFrame
-      for (int i = 0; i < mCurrentFrame->N; i++)
+      for (int i = 0; i < mCurrentFrame.N; i++)
       {
-        float z = mCurrentFrame->mvDepth[i];
+        float z = mCurrentFrame.mvDepth[i];
         if (z > 0)
         {
-          cv::Mat x3D = mCurrentFrame->UnprojectStereo(i);
+          cv::Mat x3D = mCurrentFrame.UnprojectStereo(i);
           MapPoint *pNewMP = new defSLAM::DefMapPoint(x3D, pKFini, mpMap);
           pNewMP->AddObservation(pKFini, i);
           pKFini->addMapPoint(pNewMP, i);
@@ -791,7 +791,7 @@ namespace ORB_SLAM2
           pNewMP->UpdateNormalAndDepth();
           mpMap->addMapPoint(pNewMP);
 
-          mCurrentFrame->mvpMapPoints[i] = pNewMP;
+          mCurrentFrame.mvpMapPoints[i] = pNewMP;
         }
       }
 
@@ -800,20 +800,20 @@ namespace ORB_SLAM2
 
       mpLocalMapper->InsertKeyFrame(pKFini);
 
-      mLastFrame = Frame(*mCurrentFrame);
-      mnLastKeyFrameId = mCurrentFrame->mnId;
+      mLastFrame = Frame(mCurrentFrame);
+      mnLastKeyFrameId = mCurrentFrame.mnId;
       mpLastKeyFrame = pKFini;
 
       mvpLocalKeyFrames.push_back(pKFini);
       mvpLocalMapPoints = mpMap->GetAllMapPoints();
       mpReferenceKF = pKFini;
-      mCurrentFrame->mpReferenceKF = pKFini;
+      mCurrentFrame.mpReferenceKF = pKFini;
 
       mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
       mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-      mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+      mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
       mState = OK;
     }
@@ -825,21 +825,21 @@ namespace ORB_SLAM2
     if (!mpInitializer)
     {
       // Set Reference Frame
-      if (mCurrentFrame->mvKeys.size() > 100)
+      if (mCurrentFrame.mvKeys.size() > 100)
       {
-        mInitialFrame = Frame(*mCurrentFrame);
-        mInitialFrame.mpORBextractorLeft = mCurrentFrame->mpORBextractorLeft;
-        mInitialFrame.mpORBvocabulary = mCurrentFrame->mpORBvocabulary;
+        mInitialFrame = Frame(mCurrentFrame);
+        mInitialFrame.mpORBextractorLeft = mCurrentFrame.mpORBextractorLeft;
+        mInitialFrame.mpORBvocabulary = mCurrentFrame.mpORBvocabulary;
 
-        mLastFrame = Frame(*mCurrentFrame);
-        mvbPrevMatched.resize(mCurrentFrame->mvKeysUn.size());
-        for (size_t i = 0; i < mCurrentFrame->mvKeysUn.size(); i++)
-          mvbPrevMatched[i] = mCurrentFrame->mvKeysUn[i].pt;
+        mLastFrame = Frame(mCurrentFrame);
+        mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
+        for (size_t i = 0; i < mCurrentFrame.mvKeysUn.size(); i++)
+          mvbPrevMatched[i] = mCurrentFrame.mvKeysUn[i].pt;
 
         if (mpInitializer)
           delete mpInitializer;
 
-        mpInitializer = new Initializer(*mCurrentFrame, 0.5, 250);
+        mpInitializer = new Initializer(mCurrentFrame, 0.5, 250);
 
         fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
 
@@ -849,7 +849,7 @@ namespace ORB_SLAM2
     else
     {
       // Try to initialize
-      if ((int)mCurrentFrame->mvKeys.size() <= 30)
+      if ((int)mCurrentFrame.mvKeys.size() <= 30)
       {
         delete mpInitializer;
         mpInitializer = static_cast<Initializer *>(NULL);
@@ -860,7 +860,7 @@ namespace ORB_SLAM2
       // Find correspondences
       ORBmatcher matcher(0.9, true);
       int nmatches = matcher.SearchForInitialization(
-          mInitialFrame, *mCurrentFrame, mvbPrevMatched, mvIniMatches, 150);
+          mInitialFrame, mCurrentFrame, mvbPrevMatched, mvIniMatches, 150);
 
       // Check if there are enough correspondences
       if (nmatches < 20)
@@ -874,7 +874,7 @@ namespace ORB_SLAM2
       cv::Mat tcw;                 // Current Camera Translation
       vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
-      if (mpInitializer->Initialize(*mCurrentFrame, mvIniMatches, Rcw, tcw,
+      if (mpInitializer->Initialize(mCurrentFrame, mvIniMatches, Rcw, tcw,
                                     mvIniP3D, vbTriangulated))
       {
         for (size_t i = 0, iend = mvIniMatches.size(); i < iend; i++)
@@ -891,7 +891,7 @@ namespace ORB_SLAM2
         cv::Mat Tcw = cv::Mat::eye(4, 4, CV_32F);
         Rcw.copyTo(Tcw.rowRange(0, 3).colRange(0, 3));
         tcw.copyTo(Tcw.rowRange(0, 3).col(3));
-        mCurrentFrame->SetPose(Tcw);
+        mCurrentFrame.SetPose(Tcw);
 
         CreateInitialMapMonocular();
       }
@@ -902,7 +902,7 @@ namespace ORB_SLAM2
   {
     // Create KeyFrames
     KeyFrame *pKFini = new KeyFrame(mInitialFrame, mpMap, mpKeyFrameDB);
-    KeyFrame *pKFcur = new KeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB);
+    KeyFrame *pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
     pKFini->ComputeBoW();
     pKFcur->ComputeBoW();
@@ -932,8 +932,8 @@ namespace ORB_SLAM2
       pMP->UpdateNormalAndDepth();
 
       // Fill Current Frame structure
-      mCurrentFrame->mvpMapPoints[mvIniMatches[i]] = pMP;
-      mCurrentFrame->mvbOutlier[mvIniMatches[i]] = false;
+      mCurrentFrame.mvpMapPoints[mvIniMatches[i]] = pMP;
+      mCurrentFrame.mvbOutlier[mvIniMatches[i]] = false;
 
       // Add to Map
       mpMap->addMapPoint(pMP);
@@ -979,17 +979,17 @@ namespace ORB_SLAM2
     mpLocalMapper->InsertKeyFrame(pKFini);
     mpLocalMapper->InsertKeyFrame(pKFcur);
 
-    mCurrentFrame->SetPose(pKFcur->GetPose());
-    mnLastKeyFrameId = mCurrentFrame->mnId;
+    mCurrentFrame.SetPose(pKFcur->GetPose());
+    mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKFcur;
 
     mvpLocalKeyFrames.push_back(pKFcur);
     mvpLocalKeyFrames.push_back(pKFini);
     mvpLocalMapPoints = mpMap->GetAllMapPoints();
     mpReferenceKF = pKFcur;
-    mCurrentFrame->mpReferenceKF = pKFcur;
+    mCurrentFrame.mpReferenceKF = pKFcur;
 
-    mLastFrame = Frame(*mCurrentFrame);
+    mLastFrame = Frame(mCurrentFrame);
 
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
@@ -1020,7 +1020,7 @@ namespace ORB_SLAM2
   bool Tracking::TrackReferenceKeyFrame()
   {
     // Compute Bag of Words vector
-    mCurrentFrame->ComputeBoW();
+    mCurrentFrame.ComputeBoW();
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
@@ -1028,33 +1028,33 @@ namespace ORB_SLAM2
     vector<MapPoint *> vpMapPointMatches;
 
     int nmatches =
-        matcher.SearchByBoW(mpReferenceKF, *mCurrentFrame, vpMapPointMatches);
+        matcher.SearchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
 
     if (nmatches < 15)
       return false;
 
-    mCurrentFrame->mvpMapPoints = vpMapPointMatches;
-    mCurrentFrame->SetPose(mLastFrame.mTcw);
+    mCurrentFrame.mvpMapPoints = vpMapPointMatches;
+    mCurrentFrame.SetPose(mLastFrame.mTcw);
 
-    Optimizer::poseOptimization(mCurrentFrame);
+    Optimizer::poseOptimization(&mCurrentFrame);
 
     // Discard outliers
     int nmatchesMap = 0;
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (mCurrentFrame->mvbOutlier[i])
+        if (mCurrentFrame.mvbOutlier[i])
         {
-          MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+          MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
 
-          mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
-          mCurrentFrame->mvbOutlier[i] = false;
+          mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+          mCurrentFrame.mvbOutlier[i] = false;
           pMP->mbTrackInView = false;
-          pMP->mnLastFrameSeen = mCurrentFrame->mnId;
+          pMP->mnLastFrameSeen = mCurrentFrame.mnId;
           nmatches--;
         }
-        else if (mCurrentFrame->mvpMapPoints[i]->Observations() > 0)
+        else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0)
           nmatchesMap++;
       }
     }
@@ -1137,9 +1137,9 @@ namespace ORB_SLAM2
     // Create "visual odometry" points if in Localization Mode
     UpdateLastFrame();
 
-    mCurrentFrame->SetPose(mVelocity * mLastFrame.mTcw);
+    mCurrentFrame.SetPose(mVelocity * mLastFrame.mTcw);
 
-    fill(mCurrentFrame->mvpMapPoints.begin(), mCurrentFrame->mvpMapPoints.end(),
+    fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(),
          static_cast<MapPoint *>(NULL));
 
     // Project points seen in previous frame
@@ -1148,15 +1148,15 @@ namespace ORB_SLAM2
       th = 15;
     else
       th = 7;
-    int nmatches = matcher.SearchByProjection(*mCurrentFrame, mLastFrame, th,
+    int nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, th,
                                               mSensor == System::MONOCULAR);
 
     // If few matches, uses a wider window search
     if (nmatches < 60)
     {
-      fill(mCurrentFrame->mvpMapPoints.begin(), mCurrentFrame->mvpMapPoints.end(),
+      fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(),
            static_cast<MapPoint *>(nullptr));
-      nmatches = matcher.SearchByProjection(*mCurrentFrame, mLastFrame, 2 * th,
+      nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, 2 * th,
                                             mSensor == System::MONOCULAR);
     }
 
@@ -1164,25 +1164,25 @@ namespace ORB_SLAM2
       return false;
 
     // Optimize frame pose with all matches
-    Optimizer::poseOptimization(mCurrentFrame);
+    Optimizer::poseOptimization(&mCurrentFrame);
 
     // Discard outliers
     int nmatchesMap = 0;
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (mCurrentFrame->mvbOutlier[i])
+        if (mCurrentFrame.mvbOutlier[i])
         {
-          MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+          MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
 
-          mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
-          mCurrentFrame->mvbOutlier[i] = false;
+          mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(NULL);
+          mCurrentFrame.mvbOutlier[i] = false;
           pMP->mbTrackInView = false;
-          pMP->mnLastFrameSeen = mCurrentFrame->mnId;
+          pMP->mnLastFrameSeen = mCurrentFrame.mnId;
           nmatches--;
         }
-        else if (mCurrentFrame->mvpMapPoints[i]->Observations() > 0)
+        else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0)
           nmatchesMap++;
       }
     }
@@ -1207,21 +1207,21 @@ namespace ORB_SLAM2
     SearchLocalPoints();
 
     // Optimize Pose
-    Optimizer::poseOptimization(mCurrentFrame);
+    Optimizer::poseOptimization(&mCurrentFrame);
     mnMatchesInliers = 0;
     int mnMatchesOutliers(0);
 
     // Update MapPoints Statistics
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (!mCurrentFrame->mvbOutlier[i])
+        if (!mCurrentFrame.mvbOutlier[i])
         {
-          mCurrentFrame->mvpMapPoints[i]->IncreaseFound();
+          mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
           if (!mbOnlyTracking)
           {
-            if (mCurrentFrame->mvpMapPoints[i]->Observations() > 0)
+            if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0)
             {
               mnMatchesInliers++;
             }
@@ -1243,7 +1243,7 @@ namespace ORB_SLAM2
       {
         if (pMP->isBad())
           continue;
-        if (mCurrentFrame->isInFrustum(pMP, 0.0))
+        if (mCurrentFrame.isInFrustum(pMP, 0.0))
         {
           numberLocalMapPoints++;
         }
@@ -1253,14 +1253,14 @@ namespace ORB_SLAM2
     int observedFrame(0);
     int mI(0);
     int mO(0);
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (mCurrentFrame->mvpMapPoints[i]->isBad())
+        if (mCurrentFrame.mvpMapPoints[i]->isBad())
           continue;
         observedFrame++;
-        if (!mCurrentFrame->mvbOutlier[i])
+        if (!mCurrentFrame.mvbOutlier[i])
         {
           mI++;
         }
@@ -1273,7 +1273,7 @@ namespace ORB_SLAM2
 
     std::ostringstream out;
     out << std::internal << std::setfill('0') << std::setw(5)
-        << uint(mCurrentFrame->mTimeStamp);
+        << uint(mCurrentFrame.mTimeStamp);
     std::cout << out.str() << " " << mI << " " << mO << " "
               << numberLocalMapPoints << std::endl;
     this->matches << out.str() << " " << mI << " " << mO << " "
@@ -1282,7 +1282,7 @@ namespace ORB_SLAM2
     this->mpMap->cleanTracked();
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
-    if (mCurrentFrame->mnId < mnLastRelocFrameId + mMaxFrames &&
+    if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames &&
         mnMatchesInliers < 50)
       return false;
 
@@ -1305,7 +1305,7 @@ namespace ORB_SLAM2
 
     // Do not insert keyframes if not enough frames have passed from last
     // relocalisation
-    if (mCurrentFrame->mnId < mnLastRelocFrameId + mMaxFrames &&
+    if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames &&
         nKFs > mMaxFrames)
       return false;
 
@@ -1324,12 +1324,12 @@ namespace ORB_SLAM2
     int nTrackedClose = 0;
     if (mSensor != System::MONOCULAR)
     {
-      for (int i = 0; i < mCurrentFrame->N; i++)
+      for (int i = 0; i < mCurrentFrame.N; i++)
       {
-        if (mCurrentFrame->mvDepth[i] > 0 &&
-            mCurrentFrame->mvDepth[i] < mThDepth)
+        if (mCurrentFrame.mvDepth[i] > 0 &&
+            mCurrentFrame.mvDepth[i] < mThDepth)
         {
-          if (mCurrentFrame->mvpMapPoints[i] && !mCurrentFrame->mvbOutlier[i])
+          if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
             nTrackedClose++;
           else
             nNonTrackedClose++;
@@ -1349,9 +1349,9 @@ namespace ORB_SLAM2
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe
     // insertion
-    const bool c1a = mCurrentFrame->mnId >= mnLastKeyFrameId + mMaxFrames;
+    const bool c1a = mCurrentFrame.mnId >= mnLastKeyFrameId + mMaxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b = (mCurrentFrame->mnId >= mnLastKeyFrameId + mMinFrames &&
+    const bool c1b = (mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames &&
                       bLocalMappingIdle);
     // Condition 1c: tracking is weak
     const bool c1c =
@@ -1394,21 +1394,21 @@ namespace ORB_SLAM2
     if (!mpLocalMapper->SetNotStop(true))
       return;
 
-    KeyFrame *pKF = new KeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB);
+    KeyFrame *pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
     mpReferenceKF = pKF;
-    mCurrentFrame->mpReferenceKF = pKF;
+    mCurrentFrame.mpReferenceKF = pKF;
     mpLocalMapper->InsertKeyFrame(pKF);
     mpLocalMapper->SetNotStop(false);
-    mnLastKeyFrameId = mCurrentFrame->mnId;
+    mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
   }
 
   void Tracking::SearchLocalPoints()
   {
     // Do not search map points already matched
-    for (vector<MapPoint *>::iterator vit = mCurrentFrame->mvpMapPoints.begin(),
-                                      vend = mCurrentFrame->mvpMapPoints.end();
+    for (vector<MapPoint *>::iterator vit = mCurrentFrame.mvpMapPoints.begin(),
+                                      vend = mCurrentFrame.mvpMapPoints.end();
          vit != vend; vit++)
     {
       MapPoint *pMP = *vit;
@@ -1422,15 +1422,15 @@ namespace ORB_SLAM2
         {
           pMP->assigned = true;
           pMP->IncreaseVisible();
-          pMP->mnLastFrameSeen = mCurrentFrame->mnId;
+          pMP->mnLastFrameSeen = mCurrentFrame.mnId;
           pMP->mbTrackInView = false;
         }
       }
     }
     std::vector<MapPoint *> idxs;
-    for (int i(0); i < mCurrentFrame->N; i++)
+    for (int i(0); i < mCurrentFrame.N; i++)
     {
-      MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+      MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP)
       {
         idxs.push_back(pMP);
@@ -1448,12 +1448,12 @@ namespace ORB_SLAM2
       {
         idxs.push_back(pMP);
       }
-      if (pMP->mnLastFrameSeen == mCurrentFrame->mnId)
+      if (pMP->mnLastFrameSeen == mCurrentFrame.mnId)
         continue;
       if (pMP->isBad())
         continue;
       // Project (this fills MapPoint variables for matching)
-      if (mCurrentFrame->isInFrustum(pMP, 0.5))
+      if (mCurrentFrame.isInFrustum(pMP, 0.5))
       {
         pMP->IncreaseVisible();
         nToMatch++;
@@ -1465,9 +1465,9 @@ namespace ORB_SLAM2
       int th = 3;
 
       // If the camera has been relocalised recently, perform a coarser search
-      if (mCurrentFrame->mnId < mnLastRelocFrameId + 2)
+      if (mCurrentFrame.mnId < mnLastRelocFrameId + 2)
         th = 5;
-      matcher.SearchByProjection(*mCurrentFrame, mvpLocalMapPoints, th);
+      matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th);
     }
   }
 
@@ -1498,12 +1498,12 @@ namespace ORB_SLAM2
         MapPoint *pMP = *itMP;
         if (!pMP)
           continue;
-        if (pMP->mnTrackReferenceForFrame == mCurrentFrame->mnId)
+        if (pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId)
           continue;
         if (!pMP->isBad())
         {
           mvpLocalMapPoints.push_back(pMP);
-          pMP->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+          pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
         }
       }
     }
@@ -1513,11 +1513,11 @@ namespace ORB_SLAM2
   {
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+        MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
         if (!pMP->isBad())
         {
           const map<KeyFrame *, size_t> observations = pMP->GetObservations();
@@ -1528,7 +1528,7 @@ namespace ORB_SLAM2
         }
         else
         {
-          mCurrentFrame->mvpMapPoints[i] = NULL;
+          mCurrentFrame.mvpMapPoints[i] = NULL;
         }
       }
     }
@@ -1560,7 +1560,7 @@ namespace ORB_SLAM2
       }
 
       mvpLocalKeyFrames.push_back(it->first);
-      pKF->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+      pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
     // Include also some not-already-included keyframes that are neighbors to
@@ -1585,10 +1585,10 @@ namespace ORB_SLAM2
         KeyFrame *pNeighKF = *itNeighKF;
         if (!pNeighKF->isBad())
         {
-          if (pNeighKF->mnTrackReferenceForFrame != mCurrentFrame->mnId)
+          if (pNeighKF->mnTrackReferenceForFrame != mCurrentFrame.mnId)
           {
             mvpLocalKeyFrames.push_back(pNeighKF);
-            pNeighKF->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+            pNeighKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
             break;
           }
         }
@@ -1602,10 +1602,10 @@ namespace ORB_SLAM2
         KeyFrame *pChildKF = *sit;
         if (!pChildKF->isBad())
         {
-          if (pChildKF->mnTrackReferenceForFrame != mCurrentFrame->mnId)
+          if (pChildKF->mnTrackReferenceForFrame != mCurrentFrame.mnId)
           {
             mvpLocalKeyFrames.push_back(pChildKF);
-            pChildKF->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+            pChildKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
             break;
           }
         }
@@ -1614,10 +1614,10 @@ namespace ORB_SLAM2
       KeyFrame *pParent = pKF->GetParent();
       if (pParent)
       {
-        if (pParent->mnTrackReferenceForFrame != mCurrentFrame->mnId)
+        if (pParent->mnTrackReferenceForFrame != mCurrentFrame.mnId)
         {
           mvpLocalKeyFrames.push_back(pParent);
-          pParent->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+          pParent->mnTrackReferenceForFrame = mCurrentFrame.mnId;
           break;
         }
       }
@@ -1626,20 +1626,20 @@ namespace ORB_SLAM2
     if (pKFmax)
     {
       mpReferenceKF = pKFmax;
-      mCurrentFrame->mpReferenceKF = mpReferenceKF;
+      mCurrentFrame.mpReferenceKF = mpReferenceKF;
     }
   }
 
   bool Tracking::Relocalization()
   {
     // Compute Bag of Words Vector
-    mCurrentFrame->ComputeBoW();
+    mCurrentFrame.ComputeBoW();
 
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for
     // relocalisation
     vector<KeyFrame *> vpCandidateKFs =
-        mpKeyFrameDB->DetectRelocalizationCandidates(mCurrentFrame);
+        mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
 
     if (vpCandidateKFs.empty())
       return false;
@@ -1669,7 +1669,7 @@ namespace ORB_SLAM2
       else
       {
         int nmatches =
-            matcher.SearchByBoW(pKF, *mCurrentFrame, vvpMapPointMatches[i]);
+            matcher.SearchByBoW(pKF, mCurrentFrame, vvpMapPointMatches[i]);
         if (nmatches < 15)
         {
           vbDiscarded[i] = true;
@@ -1678,7 +1678,7 @@ namespace ORB_SLAM2
         else
         {
           PnPsolver *pSolver =
-              new PnPsolver(*mCurrentFrame, vvpMapPointMatches[i]);
+              new PnPsolver(mCurrentFrame, vvpMapPointMatches[i]);
           pSolver->SetRansacParameters(0.99, 10, 300, 4, 0.5, 5.991);
           vpPnPsolvers[i] = pSolver;
           nCandidates++;
@@ -1716,7 +1716,7 @@ namespace ORB_SLAM2
         // If a Camera Pose is computed, optimize
         if (!Tcw.empty())
         {
-          Tcw.copyTo(mCurrentFrame->mTcw);
+          Tcw.copyTo(mCurrentFrame.mTcw);
 
           set<MapPoint *> sFound;
 
@@ -1726,32 +1726,32 @@ namespace ORB_SLAM2
           {
             if (vbInliers[j])
             {
-              mCurrentFrame->mvpMapPoints[j] = vvpMapPointMatches[i][j];
+              mCurrentFrame.mvpMapPoints[j] = vvpMapPointMatches[i][j];
               sFound.insert(vvpMapPointMatches[i][j]);
             }
             else
-              mCurrentFrame->mvpMapPoints[j] = NULL;
+              mCurrentFrame.mvpMapPoints[j] = NULL;
           }
 
-          int nGood = Optimizer::poseOptimization(mCurrentFrame);
+          int nGood = Optimizer::poseOptimization(&mCurrentFrame);
 
           if (nGood < 10)
             continue;
 
-          for (int io = 0; io < mCurrentFrame->N; io++)
-            if (mCurrentFrame->mvbOutlier[io])
-              mCurrentFrame->mvpMapPoints[io] = static_cast<MapPoint *>(nullptr);
+          for (int io = 0; io < mCurrentFrame.N; io++)
+            if (mCurrentFrame.mvbOutlier[io])
+              mCurrentFrame.mvpMapPoints[io] = static_cast<MapPoint *>(nullptr);
 
           // If few inliers, search by projection in a coarse window and optimize
           // again
           if (nGood < 50)
           {
             int nadditional = matcher2.SearchByProjection(
-                *mCurrentFrame, vpCandidateKFs[i], sFound, 10, 100);
+                mCurrentFrame, vpCandidateKFs[i], sFound, 10, 100);
 
             if (nadditional + nGood >= 50)
             {
-              nGood = Optimizer::poseOptimization(mCurrentFrame);
+              nGood = Optimizer::poseOptimization(&mCurrentFrame);
 
               // If many inliers but still not enough, search by projection again
               // in a narrower window
@@ -1759,20 +1759,20 @@ namespace ORB_SLAM2
               if (nGood > 30 && nGood < 50)
               {
                 sFound.clear();
-                for (int ip = 0; ip < mCurrentFrame->N; ip++)
-                  if (mCurrentFrame->mvpMapPoints[ip])
-                    sFound.insert(mCurrentFrame->mvpMapPoints[ip]);
+                for (int ip = 0; ip < mCurrentFrame.N; ip++)
+                  if (mCurrentFrame.mvpMapPoints[ip])
+                    sFound.insert(mCurrentFrame.mvpMapPoints[ip]);
                 nadditional = matcher2.SearchByProjection(
-                    *mCurrentFrame, vpCandidateKFs[i], sFound, 3, 64);
+                    mCurrentFrame, vpCandidateKFs[i], sFound, 3, 64);
 
                 // Final optimization
                 if (nGood + nadditional >= 50)
                 {
-                  nGood = Optimizer::poseOptimization(mCurrentFrame);
+                  nGood = Optimizer::poseOptimization(&mCurrentFrame);
 
-                  for (int io = 0; io < mCurrentFrame->N; io++)
-                    if (mCurrentFrame->mvbOutlier[io])
-                      mCurrentFrame->mvpMapPoints[io] = NULL;
+                  for (int io = 0; io < mCurrentFrame.N; io++)
+                    if (mCurrentFrame.mvbOutlier[io])
+                      mCurrentFrame.mvpMapPoints[io] = NULL;
                 }
               }
             }
@@ -1794,7 +1794,7 @@ namespace ORB_SLAM2
     }
     else
     {
-      mnLastRelocFrameId = mCurrentFrame->mnId;
+      mnLastRelocFrameId = mCurrentFrame.mnId;
       return true;
     }
   }
@@ -1886,21 +1886,21 @@ namespace ORB_SLAM2
   void Tracking::UpdatekeyPointsanddist()
   {
     std::vector<std::pair<std::pair<uint, uint>, double>> keyanddist;
-    uint N = this->mCurrentFrame->mvKeys.size();
+    uint N = this->mCurrentFrame.mvKeys.size();
 
     for (uint i = 0; i < N; i++)
     {
-      MapPoint *pMP = this->mCurrentFrame->mvpMapPoints[i];
+      MapPoint *pMP = this->mCurrentFrame.mvpMapPoints[i];
       if (pMP)
       {
-        if (!this->mCurrentFrame->mvbOutlier[i])
+        if (!this->mCurrentFrame.mvbOutlier[i])
         {
           cv::Mat wposw = pMP->GetWorldPos();
-          uint x = this->mCurrentFrame->mvKeys[i].pt.x;
-          uint y = this->mCurrentFrame->mvKeys[i].pt.y;
+          uint x = this->mCurrentFrame.mvKeys[i].pt.x;
+          uint y = this->mCurrentFrame.mvKeys[i].pt.y;
           cv::Mat row = cv::Mat::ones(1, 1, CV_32F);
           wposw.push_back(row);
-          cv::Mat wposc = this->mCurrentFrame->mTcw * wposw;
+          cv::Mat wposc = this->mCurrentFrame.mTcw * wposw;
           std::pair<uint, uint> kp = std::pair<uint, uint>(x, y);
           /*    keyanddist.push_back(std::pair<std::pair<uint,uint>,double>(kp,
                                                                             sqrt(wposc.at<float>(0)* wposc.at<float>(0)+ wposc.at<float>(1)* wposc.at<float>(1)+ wposc.at<float>(2)* wposc.at<float>(2))));

@@ -160,7 +160,7 @@ namespace defSLAM
       if (!mbOnlyTracking)
       {
         bOK = TrackWithMotionModel();
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
         // If we have an initial estimation of the camera pose and matching. Track
         // the local map.
         if (bOK)
@@ -173,7 +173,7 @@ namespace defSLAM
                 static_cast<DefMap *>(mpMap)->GetTemplate()->kf;
 
             Optimizer::DefPoseOptimization(
-                mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(), 0,
+                &mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(), 0,
                 LocalZone);
 
             if (viewerOn)
@@ -191,7 +191,7 @@ namespace defSLAM
         bOK = this->OnlyLocalisation();
         // If we have an initial estimation of the camera pose and matching. Track
         // the local map.
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
         // mbVO true means that there are few matches to MapPoints in the map. We
         // cannot retrieve
@@ -213,16 +213,16 @@ namespace defSLAM
           mLastFrame.GetRotationInverse().copyTo(
               LastTwc.rowRange(0, 3).colRange(0, 3));
           mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
-          mVelocity = mCurrentFrame->mTcw * LastTwc;
+          mVelocity = mCurrentFrame.mTcw * LastTwc;
         }
         else
           mVelocity = cv::Mat();
 
         if (viewerOn)
         {
-          mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+          mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
           mpFrameDrawer->Update(this);
-          mpMapDrawer->UpdatePoints(mCurrentFrame);
+          mpMapDrawer->UpdatePoints(&mCurrentFrame);
           static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplate();
         }
 
@@ -232,7 +232,7 @@ namespace defSLAM
         EraseTemporalPoints();
 
 // Check if we need to insert a new keyframe
-        if ((mCurrentFrame->mnId % 10) < 1)
+        if ((mCurrentFrame.mnId % 10) < 1)
         {
           this->CreateNewKeyFrame();
         }
@@ -242,11 +242,11 @@ namespace defSLAM
         // finally decide if they are outliers or not. We don't want next frame to
         // estimate its position with those points so we discard them in the
         // frame.
-        for (size_t i = 0; i < size_t(mCurrentFrame->N); i++)
+        for (size_t i = 0; i < size_t(mCurrentFrame.N); i++)
         {
-          if (mCurrentFrame->mvpMapPoints[i] && mCurrentFrame->mvbOutlier[i])
+          if (mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
           {
-            mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
+            mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
           }
         }
       }
@@ -254,11 +254,11 @@ namespace defSLAM
       else
       {
         mState = LOST;
-        this->status << mCurrentFrame->mTimeStamp << " " << 1 << std::endl;
+        this->status << mCurrentFrame.mTimeStamp << " " << 1 << std::endl;
         if (viewerOn)
         {
           mpFrameDrawer->Update(this);
-          mpMapDrawer->UpdatePoints(mCurrentFrame);
+          mpMapDrawer->UpdatePoints(&mCurrentFrame);
         }
 
         cout << "Track lost soon after initialisation, reseting..." << endl;
@@ -266,18 +266,18 @@ namespace defSLAM
         return;
       }
 
-      if (!mCurrentFrame->mpReferenceKF)
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
-      mLastFrame = Frame(*mCurrentFrame);
+      if (!mCurrentFrame.mpReferenceKF)
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
+      mLastFrame = Frame(mCurrentFrame);
     }
 
-    if (!mCurrentFrame->mTcw.empty())
+    if (!mCurrentFrame.mTcw.empty())
     {
       cv::Mat Tcr =
-          mCurrentFrame->mTcw * mCurrentFrame->mpReferenceKF->GetPoseInverse();
+          mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr);
       mlpReferences.push_back(mpReferenceKF);
-      mlFrameTimes.push_back(mCurrentFrame->mTimeStamp);
+      mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
       mlbLost.push_back(mState == LOST);
     }
     else
@@ -302,32 +302,32 @@ namespace defSLAM
     if (static_cast<DefMap *>(mpMap)->GetTemplate())
     {
       Optimizer::DefPoseOptimization(
-          mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(),
+          &mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(),
           this->getRegTemp(), LocalZone);
     }
     else
     {
-      ORB_SLAM2::Optimizer::poseOptimization(mCurrentFrame);
+      ORB_SLAM2::Optimizer::poseOptimization(&mCurrentFrame);
     }
 
     // Count inliers, outliers and make statistics for map point culling.
     mnMatchesInliers = 0;
     int mnMatchesOutliers(0);
     int DefnToMatchLOCAL(0);
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (!mCurrentFrame->mvbOutlier[i])
+        if (!mCurrentFrame.mvbOutlier[i])
         {
-          mCurrentFrame->mvpMapPoints[i]->IncreaseFound();
+          mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
           if (!mbOnlyTracking)
           {
-            if (mCurrentFrame->mvpMapPoints[i]->Observations() > 0)
+            if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0)
             {
               mnMatchesInliers++;
               if (static_cast<DefMapPoint *>(
-                      mCurrentFrame->mvpMapPoints[i])
+                      mCurrentFrame.mvpMapPoints[i])
                       ->getFacet())
                 DefnToMatchLOCAL++;
             }
@@ -350,7 +350,7 @@ namespace defSLAM
         if (pMP->isBad())
           continue;
         if (static_cast<DefMapPoint *>(pMP)->getFacet())
-          if (mCurrentFrame->isInFrustum(pMP, 0.5))
+          if (mCurrentFrame.isInFrustum(pMP, 0.5))
           {
             numberLocalMapPoints++;
           }
@@ -360,14 +360,14 @@ namespace defSLAM
     int observedFrame(0);
     int mI(0);
     int mO(0);
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (mCurrentFrame->mvpMapPoints[i]->isBad())
+        if (mCurrentFrame.mvpMapPoints[i]->isBad())
           continue;
         observedFrame++;
-        if (!mCurrentFrame->mvbOutlier[i])
+        if (!mCurrentFrame.mvbOutlier[i])
         {
           mI++;
         }
@@ -381,14 +381,14 @@ namespace defSLAM
     // Save matching result
     std::ostringstream out;
     out << std::internal << std::setfill('0') << std::setw(5)
-        << uint(mCurrentFrame->mTimeStamp);
+        << uint(mCurrentFrame.mTimeStamp);
     std::cout << out.str() << " " << mI << " " << mO << " "
               << numberLocalMapPoints << std::endl;
     this->matches << out.str() << " " << mI << " " << mO << " "
                   << numberLocalMapPoints << std::endl;
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
-    if (mCurrentFrame->mnId < mnLastRelocFrameId + mMaxFrames &&
+    if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames &&
         mnMatchesInliers < 20)
       return false;
 
@@ -407,15 +407,15 @@ namespace defSLAM
     // Create "visual odometry" points if in Localization Mode
     UpdateLastFrame();
 
-    mCurrentFrame->SetPose(mLastFrame.mTcw);
+    mCurrentFrame.SetPose(mLastFrame.mTcw);
 
-    fill(mCurrentFrame->mvpMapPoints.begin(), mCurrentFrame->mvpMapPoints.end(),
+    fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(),
          static_cast<MapPoint *>(nullptr));
 
     // Project points seen in previous frame
     int th(20);
 
-    int nmatches = Defmatcher.SearchByProjection(*mCurrentFrame, mLastFrame, th,
+    int nmatches = Defmatcher.SearchByProjection(mCurrentFrame, mLastFrame, th,
                                                  mSensor == System::MONOCULAR);
 
     std::cout << "POINTS matched:" << nmatches << std::endl;
@@ -423,9 +423,9 @@ namespace defSLAM
     // If few matches, uses a wider window search
     if (nmatches /* +nmatches2 */ < 20)
     {
-      fill(mCurrentFrame->mvpMapPoints.begin(), mCurrentFrame->mvpMapPoints.end(),
+      fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(),
            static_cast<MapPoint *>(nullptr));
-      nmatches = Defmatcher.SearchByProjection(*mCurrentFrame, mLastFrame, th + 5,
+      nmatches = Defmatcher.SearchByProjection(mCurrentFrame, mLastFrame, th + 5,
                                                mSensor == System::MONOCULAR);
     }
     // std::cout << "mnMatches 2 Motion: " << nmatches << std::endl;
@@ -436,24 +436,24 @@ namespace defSLAM
 
     /// Optimize frame pose with all matches with a rigid model to initialize the
     /// pose of the camera
-    Optimizer::poseOptimization(mCurrentFrame, myfile);
+    Optimizer::poseOptimization(&mCurrentFrame, myfile);
 
     // Discard outliers
     int nmatchesMap = 0;
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      if (mCurrentFrame->mvpMapPoints[i])
+      if (mCurrentFrame.mvpMapPoints[i])
       {
-        if (mCurrentFrame->mvbOutlier[i])
+        if (mCurrentFrame.mvbOutlier[i])
         {
-          MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
-          mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
-          mCurrentFrame->mvbOutlier[i] = false;
+          MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
+          mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
+          mCurrentFrame.mvbOutlier[i] = false;
           pMP->mbTrackInView = false;
-          pMP->mnLastFrameSeen = mCurrentFrame->mnId;
+          pMP->mnLastFrameSeen = mCurrentFrame.mnId;
           nmatches--;
         }
-        else if (mCurrentFrame->mvpMapPoints[i]->Observations() > 0)
+        else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0)
           nmatchesMap++;
       }
     }
@@ -499,11 +499,11 @@ namespace defSLAM
         MapPoint *pMP = *itMP;
         if (!pMP)
           continue;
-        if (pMP->mnTrackReferenceForFrame == mCurrentFrame->mnId)
+        if (pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId)
           continue;
         if (!pMP->isBad())
         {
-          pMP->mnTrackReferenceForFrame = mCurrentFrame->mnId;
+          pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
           mPall.insert(pMP);
         }
       }
@@ -554,7 +554,7 @@ namespace defSLAM
       cv::cvtColor(imRectLeft, mImRGB, cv::COLOR_GRAY2RGB);
     }
 
-    mCurrentFrame = new GroundTruthFrame(
+    mCurrentFrame = GroundTruthFrame(
         mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef,
         mbf, mThDepth, imRectLeft, imGrayRight, _mask);
 
@@ -563,19 +563,19 @@ namespace defSLAM
     if ((mState == eTrackingState::OK) && (saveResults))
     {
       float scale =
-          static_cast<GroundTruthFrame *>(mCurrentFrame)->Estimate3DScale(mpMap);
-      scalefile << mCurrentFrame->mTimeStamp << " " << scale << std::endl;
-      double error = static_cast<GroundTruthFrame *>(mCurrentFrame)
+          static_cast<GroundTruthFrame *>(&mCurrentFrame)->Estimate3DScale(mpMap);
+      scalefile << mCurrentFrame.mTimeStamp << " " << scale << std::endl;
+      double error = static_cast<GroundTruthFrame *>(&mCurrentFrame)
                          ->Estimate3DError(mpMap, scale);
 
       if (viewerOn)
       {
-        mpMapDrawer->UpdatePoints(mCurrentFrame, scale);
+        mpMapDrawer->UpdatePoints(&mCurrentFrame, scale);
         this->mpFrameDrawer->SetError(error);
       }
     }
 
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   // Run for image with ground truth through a depth image. It is used for
@@ -615,7 +615,7 @@ namespace defSLAM
       cv::cvtColor(imRectLeft, mImRGB, cv::COLOR_GRAY2RGB);
     }
 
-    mCurrentFrame = new GroundTruthFrame(
+    mCurrentFrame = GroundTruthFrame(
         mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef,
         mbf, mThDepth, imRectLeft, imDepth, true, _mask);
 
@@ -624,19 +624,19 @@ namespace defSLAM
     if ((mState == eTrackingState::OK) && (saveResults))
     {
       float scale =
-          static_cast<GroundTruthFrame *>(mCurrentFrame)->Estimate3DScale(mpMap);
-      scalefile << mCurrentFrame->mTimeStamp << " " << scale << std::endl;
-      double error = static_cast<GroundTruthFrame *>(mCurrentFrame)
+          static_cast<GroundTruthFrame *>(&mCurrentFrame)->Estimate3DScale(mpMap);
+      scalefile << mCurrentFrame.mTimeStamp << " " << scale << std::endl;
+      double error = static_cast<GroundTruthFrame *>(&mCurrentFrame)
                          ->Estimate3DError(mpMap, scale);
 
       if (viewerOn)
       {
-        mpMapDrawer->UpdatePoints(mCurrentFrame, scale);
+        mpMapDrawer->UpdatePoints(&mCurrentFrame, scale);
         this->mpFrameDrawer->SetError(error);
       }
       // GroundTruthCalculator::CompareDefGT(&mCurrentFrame,timestamp);
     }
-    return mCurrentFrame->mTcw.clone();
+    return mCurrentFrame.mTcw.clone();
   }
 
   // Initialize scene with a plane.
@@ -644,25 +644,25 @@ namespace defSLAM
   {
     /// Initialize the surface and the points in the surface considering a plane
     /// parallel to the camera plane
-    if (mCurrentFrame->N > 100)
+    if (mCurrentFrame.N > 100)
     {
       // Set Frame pose to the origin
-      mCurrentFrame->SetPose(cv::Mat::eye(4, 4, CV_32F));
+      mCurrentFrame.SetPose(cv::Mat::eye(4, 4, CV_32F));
 
       // Create KeyFrame
       KeyFrame *pKFini =
-          new GroundTruthKeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB);
+          new GroundTruthKeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
       // Insert KeyFrame in the map
       mpMap->AddKeyFrame(pKFini);
       // Create MapPoints with inliers and associate to KeyFrame
-      for (size_t i = 0; i < size_t(mCurrentFrame->N); i++)
+      for (size_t i = 0; i < size_t(mCurrentFrame.N); i++)
       {
-        cv::KeyPoint kp = mCurrentFrame->mvKeysUn[i];
+        cv::KeyPoint kp = mCurrentFrame.mvKeysUn[i];
 
         cv::Mat x3D = (cv::Mat_<float>(3, 1)
-                           << (kp.pt.x - mCurrentFrame->cx) / mCurrentFrame->fx,
-                       (kp.pt.y - mCurrentFrame->cy) / mCurrentFrame->fy, 1);
+                           << (kp.pt.x - mCurrentFrame.cx) / mCurrentFrame.fx,
+                       (kp.pt.y - mCurrentFrame.cy) / mCurrentFrame.fy, 1);
         MapPoint *pNewMP = new DefMapPoint(x3D, pKFini, mpMap);
 
         pNewMP->AddObservation(pKFini, i);
@@ -670,7 +670,7 @@ namespace defSLAM
         pNewMP->ComputeDistinctiveDescriptors();
         pNewMP->UpdateNormalAndDepth();
         mpMap->addMapPoint(pNewMP);
-        mCurrentFrame->mvpMapPoints[i] = pNewMP;
+        mCurrentFrame.mvpMapPoints[i] = pNewMP;
         pKFini->GetMapPoint(i);
       }
 
@@ -695,28 +695,28 @@ namespace defSLAM
 
       cout << "New map created with " << mpMap->MapPointsInMap() << " points"
            << endl;
-      mLastFrame = Frame(*mCurrentFrame);
-      mnLastKeyFrameId = uint(mCurrentFrame->mnId);
+      mLastFrame = Frame(mCurrentFrame);
+      mnLastKeyFrameId = uint(mCurrentFrame.mnId);
       mpLastKeyFrame = pKFini;
       mvpLocalKeyFrames.push_back(pKFini);
       mvpLocalMapPoints = mpMap->GetAllMapPoints();
       mpReferenceKF = pKFini;
-      mCurrentFrame->mpReferenceKF = pKFini;
+      mCurrentFrame.mpReferenceKF = pKFini;
       mLastFrame.mpReferenceKF = pKFini;
       mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
       mpMap->mvpKeyFrameOrigins.push_back(pKFini);
       mpLocalMapper->InsertKeyFrame(pKFini);
       cv::Mat Tcr =
-          mCurrentFrame->mTcw * mCurrentFrame->mpReferenceKF->GetPoseInverse();
+          mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr);
       // Initialize the SLAM
       static_cast<DefKeyFrame *>(pKFini)->assignTemplate();
       static_cast<DefMap *>(mpMap)->createTemplate(pKFini);
       if (viewerOn)
       {
-        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
         mpFrameDrawer->Update(this);
-        mpMapDrawer->UpdatePoints(mCurrentFrame);
+        mpMapDrawer->UpdatePoints(&mCurrentFrame);
         static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplate();
         static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplateAtRest();
       }
@@ -727,14 +727,14 @@ namespace defSLAM
   // Remove matches of the current keyframe.
   void DefTracking::CleanMatches()
   {
-    for (int i = 0; i < mCurrentFrame->N; i++)
+    for (int i = 0; i < mCurrentFrame.N; i++)
     {
-      MapPoint *pMP = mCurrentFrame->mvpMapPoints[i];
+      MapPoint *pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP)
         if (pMP->Observations() < 1)
         {
-          mCurrentFrame->mvbOutlier[i] = false;
-          mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
+          mCurrentFrame.mvbOutlier[i] = false;
+          mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
         }
     }
   }
@@ -759,11 +759,11 @@ namespace defSLAM
     if (!mpLocalMapper->SetNotStop(true))
       return;
 
-    KeyFrame *pKF = new GroundTruthKeyFrame(*mCurrentFrame, mpMap, mpKeyFrameDB);
-    mCurrentFrame->mpReferenceKF = mpReferenceKF;
+    KeyFrame *pKF = new GroundTruthKeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+    mCurrentFrame.mpReferenceKF = mpReferenceKF;
     mpLocalMapper->InsertKeyFrame(pKF);
     mpLocalMapper->SetNotStop(false);
-    mnLastKeyFrameId = mCurrentFrame->mnId;
+    mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
   }
 
@@ -776,9 +776,9 @@ namespace defSLAM
   
   void DefTracking::PreintegrateIMU()
   {
-      if(!mCurrentFrame->mpPrevFrame)
+      if(!mCurrentFrame.mpPrevFrame)
       {
-          mCurrentFrame->setIntegrated();
+          mCurrentFrame.setIntegrated();
           return;
       }
 
@@ -788,7 +788,7 @@ namespace defSLAM
       mvImuFromLastFrame.reserve(mlQueueImuData.size());
       if(mlQueueImuData.size() == 0)
       {
-          mCurrentFrame->setIntegrated();
+          mCurrentFrame.setIntegrated();
           return;
       }
 
@@ -801,11 +801,11 @@ namespace defSLAM
               {
                   Point* m = &mlQueueImuData.front();
                   cout.precision(17);
-                  if(m->t<mCurrentFrame->mpPrevFrame->mTimeStamp-0.001l)
+                  if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp-0.001l)
                   {
                       mlQueueImuData.pop_front();
                   }
-                  else if(m->t<mCurrentFrame->mTimeStamp-0.001l)
+                  else if(m->t<mCurrentFrame.mTimeStamp-0.001l)
                   {
                       mvImuFromLastFrame.push_back(*m);
                       mlQueueImuData.pop_front();
@@ -828,7 +828,7 @@ namespace defSLAM
 
 
       const int n = mvImuFromLastFrame.size()-1;
-      Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame->mImuCalib);
+      Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
 
       for(int i=0; i<n; i++)
       {
@@ -837,12 +837,12 @@ namespace defSLAM
           if((i==0) && (i<(n-1)))
           {
               float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-              float tini = mvImuFromLastFrame[i].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+              float tini = mvImuFromLastFrame[i].t-mCurrentFrame.mpPrevFrame->mTimeStamp;
               acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                       (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
               angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
                       (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tini/tab))*0.5f;
-              tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame->mpPrevFrame->mTimeStamp;
+              tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame.mpPrevFrame->mTimeStamp;
           }
           else if(i<(n-1))
           {
@@ -853,18 +853,18 @@ namespace defSLAM
           else if((i>0) && (i==(n-1)))
           {
               float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-              float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame->mTimeStamp;
+              float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame.mTimeStamp;
               acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                       (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
               angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
                       (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tend/tab))*0.5f;
-              tstep = mCurrentFrame->mTimeStamp-mvImuFromLastFrame[i].t;
+              tstep = mCurrentFrame.mTimeStamp-mvImuFromLastFrame[i].t;
           }
           else if((i==0) && (i==(n-1)))
           {
               acc = mvImuFromLastFrame[i].a;
               angVel = mvImuFromLastFrame[i].w;
-              tstep = mCurrentFrame->mTimeStamp-mCurrentFrame->mpPrevFrame->mTimeStamp;
+              tstep = mCurrentFrame.mTimeStamp-mCurrentFrame.mpPrevFrame->mTimeStamp;
           }
 
           if (!mpImuPreintegratedFromLastKF)
@@ -873,16 +873,16 @@ namespace defSLAM
           pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
       }
 
-      mCurrentFrame->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
-      mCurrentFrame->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-      mCurrentFrame->mpLastKeyFrame = mpLastKeyFrame;
+      mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+      mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+      mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
-      mCurrentFrame->setIntegrated();
+      mCurrentFrame.setIntegrated();
   }
 
   bool DefTracking::PredictStateIMU()
   {
-      if(!mCurrentFrame->mpPrevFrame)
+      if(!mCurrentFrame.mpPrevFrame)
           return false;
 
       if(mbMapUpdated && mpLastKeyFrame)
@@ -897,12 +897,12 @@ namespace defSLAM
           cv::Mat Rwb2 = NormalizeRotation(Rwb1*mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
           cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
           cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
-          mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
-          mCurrentFrame->mPredRwb = Rwb2.clone();
-          mCurrentFrame->mPredtwb = twb2.clone();
-          mCurrentFrame->mPredVwb = Vwb2.clone();
-          mCurrentFrame->mImuBias = mpLastKeyFrame->GetImuBias();
-          mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+          mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+          mCurrentFrame.mPredRwb = Rwb2.clone();
+          mCurrentFrame.mPredtwb = twb2.clone();
+          mCurrentFrame.mPredVwb = Vwb2.clone();
+          mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
+          mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
           return true;
       }
       else if(!mbMapUpdated)
@@ -911,18 +911,18 @@ namespace defSLAM
           const cv::Mat Rwb1 = mLastFrame.GetImuRotation();
           const cv::Mat Vwb1 = mLastFrame.mVw;
           const cv::Mat Gz = (cv::Mat_<float>(3,1) << 0,0,-GRAVITY_VALUE);
-          const float t12 = mCurrentFrame->mpImuPreintegratedFrame->dT;
+          const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
 
-          cv::Mat Rwb2 = NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
-          cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
-          cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame->mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
+          cv::Mat Rwb2 = NormalizeRotation(Rwb1*mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
+          cv::Mat twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
+          cv::Mat Vwb2 = Vwb1 + t12*Gz + Rwb1*mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
-          mCurrentFrame->SetImuPoseVelocity(Rwb2,twb2,Vwb2);
-          mCurrentFrame->mPredRwb = Rwb2.clone();
-          mCurrentFrame->mPredtwb = twb2.clone();
-          mCurrentFrame->mPredVwb = Vwb2.clone();
-          mCurrentFrame->mImuBias =mLastFrame.mImuBias;
-          mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
+          mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+          mCurrentFrame.mPredRwb = Rwb2.clone();
+          mCurrentFrame.mPredtwb = twb2.clone();
+          mCurrentFrame.mPredVwb = Vwb2.clone();
+          mCurrentFrame.mImuBias =mLastFrame.mImuBias;
+          mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
           return true;
       }
       else
@@ -955,19 +955,19 @@ namespace defSLAM
       if (mSensor == System::MONOCULAR)
       {
           if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
-              // mCurrentFrame = new Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-              mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+              // mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+              mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
           else
-              mCurrentFrame = new Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+              mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
       }
       else if(mSensor == System::IMU_MONOCULAR) {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-          // mCurrentFrame = new ImuFrame(mImGray, timestamp, mpIniORBextractor,
+          // mCurrentFrame = ImuFrame(mImGray, timestamp, mpIniORBextractor,
                                   // mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
-          mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
+          mCurrentFrame = ImuFrame(mImGray, timestamp, mpORBextractorLeft,
                                   mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
         else
-          mCurrentFrame = new ImuFrame(mImGray, timestamp, mpORBextractorLeft,
+          mCurrentFrame = ImuFrame(mImGray, timestamp, mpORBextractorLeft,
                                   mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth,
                                   &mLastFrame,*mpImuCalib);
       }
@@ -977,7 +977,7 @@ namespace defSLAM
 
       std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
-      lastID = mCurrentFrame->mnId;
+      lastID = mCurrentFrame.mnId;
       
       TrackWithImu();
 
@@ -986,8 +986,8 @@ namespace defSLAM
       double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
 
   #ifdef SAVE_TIMES
-      f_track_times << mCurrentFrame->mTimeORB_Ext << ",";
-      f_track_times << mCurrentFrame->mTimeStereoMatch << ",";
+      f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
+      f_track_times << mCurrentFrame.mTimeStereoMatch << ",";
       f_track_times << mTime_PreIntIMU << ",";
       f_track_times << mTime_PosePred << ",";
       f_track_times << mTime_LocalMapTrack << ",";
@@ -995,7 +995,7 @@ namespace defSLAM
       f_track_times << t_track << endl;
   #endif
 
-      return mCurrentFrame->mTcw.clone();
+      return mCurrentFrame.mTcw.clone();
   }
 
   bool DefTracking::ParseIMUParamFile(cv::FileStorage &fSettings)
@@ -1112,7 +1112,7 @@ namespace defSLAM
     }
     
     if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
-        static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
+        static_cast<ImuFrame *>(&mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
     
     if (mState == NO_IMAGES_YET)
       mState = NOT_INITIALIZED;
@@ -1129,6 +1129,7 @@ namespace defSLAM
     {
       this->MonocularInitialization();
       if (mState != OK)
+        mLastFrame = Frame(mCurrentFrame);
         return;
     }
     else
@@ -1140,7 +1141,7 @@ namespace defSLAM
       if (!mbOnlyTracking)
       {
         bOK = TrackWithMotionModel();
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
         // If we have an initial estimation of the camera pose and matching. Track
         // the local map.
         if (bOK)
@@ -1153,7 +1154,7 @@ namespace defSLAM
                 static_cast<DefMap *>(mpMap)->GetTemplate()->kf;
 
             Optimizer::DefPoseOptimization(
-                mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(), 0,
+                &mCurrentFrame, mpMap, this->getRegLap(), this->getRegInex(), 0,
                 LocalZone);
 
             if (viewerOn)
@@ -1171,7 +1172,7 @@ namespace defSLAM
         bOK = this->OnlyLocalisation();
         // If we have an initial estimation of the camera pose and matching. Track
         // the local map.
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
         // mbVO true means that there are few matches to MapPoints in the map. We
         // cannot retrieve
@@ -1193,16 +1194,16 @@ namespace defSLAM
           mLastFrame.GetRotationInverse().copyTo(
               LastTwc.rowRange(0, 3).colRange(0, 3));
           mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
-          mVelocity = mCurrentFrame->mTcw * LastTwc;
+          mVelocity = mCurrentFrame.mTcw * LastTwc;
         }
         else
           mVelocity = cv::Mat();
 
         if (viewerOn)
         {
-          mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->mTcw);
+          mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
           mpFrameDrawer->Update(this);
-          mpMapDrawer->UpdatePoints(mCurrentFrame);
+          mpMapDrawer->UpdatePoints(&mCurrentFrame);
           static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplate();
         }
 
@@ -1212,7 +1213,7 @@ namespace defSLAM
         EraseTemporalPoints();
 
 // Check if we need to insert a new keyframe
-        if ((mCurrentFrame->mnId % 10) < 1)
+        if ((mCurrentFrame.mnId % 10) < 1)
         {
           this->CreateNewKeyFrame();
         }
@@ -1222,11 +1223,11 @@ namespace defSLAM
         // finally decide if they are outliers or not. We don't want next frame to
         // estimate its position with those points so we discard them in the
         // frame.
-        for (size_t i = 0; i < size_t(mCurrentFrame->N); i++)
+        for (size_t i = 0; i < size_t(mCurrentFrame.N); i++)
         {
-          if (mCurrentFrame->mvpMapPoints[i] && mCurrentFrame->mvbOutlier[i])
+          if (mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
           {
-            mCurrentFrame->mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
+            mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint *>(nullptr);
           }
         }
       }
@@ -1234,11 +1235,11 @@ namespace defSLAM
       else
       {
         mState = LOST;
-        this->status << mCurrentFrame->mTimeStamp << " " << 1 << std::endl;
+        this->status << mCurrentFrame.mTimeStamp << " " << 1 << std::endl;
         if (viewerOn)
         {
           mpFrameDrawer->Update(this);
-          mpMapDrawer->UpdatePoints(mCurrentFrame);
+          mpMapDrawer->UpdatePoints(&mCurrentFrame);
         }
 
         cout << "Track lost soon after initialisation, reseting..." << endl;
@@ -1246,18 +1247,18 @@ namespace defSLAM
         return;
       }
 
-      if (!mCurrentFrame->mpReferenceKF)
-        mCurrentFrame->mpReferenceKF = mpReferenceKF;
-      mLastFrame = Frame(*mCurrentFrame);
+      if (!mCurrentFrame.mpReferenceKF)
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
+      mLastFrame = Frame(mCurrentFrame);
     }
 
-    if (!mCurrentFrame->mTcw.empty())
+    if (!mCurrentFrame.mTcw.empty())
     {
       cv::Mat Tcr =
-          mCurrentFrame->mTcw * mCurrentFrame->mpReferenceKF->GetPoseInverse();
+          mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr);
       mlpReferences.push_back(mpReferenceKF);
-      mlFrameTimes.push_back(mCurrentFrame->mTimeStamp);
+      mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
       mlbLost.push_back(mState == LOST);
     }
     else
@@ -1274,7 +1275,7 @@ namespace defSLAM
   {
     Tracking::Reset();
     
-    mCurrentFrame = new ImuFrame();
+    mCurrentFrame = ImuFrame();
     mLastFrame = ImuFrame();
     mnLastRelocFrameId = 0;
     mpReferenceKF = static_cast<KeyFrame*>(NULL);
@@ -1309,10 +1310,10 @@ namespace defSLAM
     // cout << num_lost << " Frames set to lost" << endl;
     // mlbLost = lbLost;
     
-    mnInitialFrameId = mCurrentFrame->mnId;
-    mnLastRelocFrameId = mCurrentFrame->mnId;
+    mnInitialFrameId = mCurrentFrame.mnId;
+    mnLastRelocFrameId = mCurrentFrame.mnId;
     
-    mCurrentFrame = new ImuFrame();
+    mCurrentFrame = ImuFrame();
     mLastFrame = ImuFrame();
     mpReferenceKF = static_cast<KeyFrame*>(NULL);
     mpLastKeyFrame = static_cast<KeyFrame*>(NULL);

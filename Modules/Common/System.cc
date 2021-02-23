@@ -361,8 +361,8 @@ namespace defSLAM
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     return Tcw;
   }
 
@@ -450,8 +450,8 @@ namespace defSLAM
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     return Tcw;
   }
 
@@ -525,8 +525,8 @@ namespace defSLAM
 #endif
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     return Tcw;
   }
 
@@ -663,8 +663,8 @@ namespace defSLAM
 
       unique_lock<mutex> lock2(mMutexState);
       mTrackingState = mpTracker->mState;
-      mTrackedMapPoints = mpTracker->mCurrentFrame->mvpMapPoints;
-      mTrackedKeyPointsUn = mpTracker->mCurrentFrame->mvKeysUn;
+      mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+      mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
       return Tcw;
   }

@@ -190,17 +190,17 @@ namespace defSLAM
         if (pMP->isBad())
           continue;
         if (static_cast<DefMapPoint *>(pMP)->getFacet())
-          if (pTracker->mCurrentFrame->isInFrustum(pMP, 0.5))
+          if (pTracker->mCurrentFrame.isInFrustum(pMP, 0.5))
           {
             cv::KeyPoint kp =
-                pTracker->mCurrentFrame->ProjectPoints(pMP->GetWorldPos());
+                pTracker->mCurrentFrame.ProjectPoints(pMP->GetWorldPos());
             mvCurrentLocalMap.push_back(std::move(kp));
           }
       }
     }
 
-    mvCurrentKeys = pTracker->mCurrentFrame->mvKeys;
-    this->mvCurrentKeysCorr = pTracker->mCurrentFrame->mvKeysUnCorr;
+    mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
+    this->mvCurrentKeysCorr = pTracker->mCurrentFrame.mvKeysUnCorr;
     N = mvCurrentKeys.size();
     this->N2 = mvCurrentKeysCorr.size();
 
@@ -217,10 +217,10 @@ namespace defSLAM
     {
       for (int i = 0; i < N; i++)
       {
-        MapPoint *pMP = pTracker->mCurrentFrame->mvpMapPoints[i];
+        MapPoint *pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
         if (pMP)
         {
-          if (!pTracker->mCurrentFrame->mvbOutlier[i])
+          if (!pTracker->mCurrentFrame.mvbOutlier[i])
           {
             if (static_cast<DefMapPoint *>(pMP)->getFacet())
             {
@@ -236,8 +236,8 @@ namespace defSLAM
     try
     {
 
-      pTracker->mCurrentFrame->mK.copyTo(mK);
-      pTracker->mCurrentFrame->mTcw.copyTo(mTcw);
+      pTracker->mCurrentFrame.mK.copyTo(mK);
+      pTracker->mCurrentFrame.mTcw.copyTo(mTcw);
     }
     catch (...)
     {

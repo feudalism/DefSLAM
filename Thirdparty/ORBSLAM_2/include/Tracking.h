@@ -124,7 +124,7 @@ namespace ORB_SLAM2
     int mSensor;
 
     // Current Frame
-    Frame *mCurrentFrame;
+    Frame mCurrentFrame;
     cv::Mat mImGray;
     cv::Mat mImRGB;
 
