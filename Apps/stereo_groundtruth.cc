@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
   // Create SLAM system. It initializes all system threads and gets ready to
   // process frames.
-  defSLAM::System SLAM(argv[1], argv[2], true);
+  defSLAM::System SLAM(argv[1], argv[2], false);
 
   // Vector for tracking time statistics
   vector<float> vTimesTrack;
