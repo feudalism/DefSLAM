@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads (local mapping, loop closing, viewer)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, sensor, use viewer
-    defSLAM::System SLAM(orbVocab, calibFile, defSLAM::System::IMU_MONOCULAR, true);
+    defSLAM::System SLAM(orbVocab, calibFile, defSLAM::System::IMU_MONOCULAR, false);
 
     cv::Mat im;
     vector<ORB_SLAM3::IMU::Point> vImuMeas;
