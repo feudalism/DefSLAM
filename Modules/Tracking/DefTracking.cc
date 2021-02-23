@@ -1111,16 +1111,19 @@ namespace defSLAM
         return;
     }
     
-    // if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
-        // static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
+    if (mSensor == System::IMU_MONOCULAR && mpLastKeyFrame)
+        static_cast<ImuFrame *>(mCurrentFrame)->SetNewBias(mpLastKeyFrame->GetImuBias());
     
     if (mState == NO_IMAGES_YET)
       mState = NOT_INITIALIZED;
     
     mLastProcessedState = mState;
     
+    PreintegrateIMU();
+    
     // Prevent changes to map
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
+    mbMapUpdated = false;
 
     if (mState == NOT_INITIALIZED)
     {
