@@ -66,10 +66,11 @@ int main(int argc, char **argv)
     f << fixed;
     cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
+    size_t start = 200;
     cv::Mat im;
     vector<ORB_SLAM3::IMU::Point> vImuMeas;
     
-    for(int ni=0; ni<nImages; ni++)
+    for(int ni = start; ni<nImages; ni++)
     {
         std::cout << vstrImageFilenames[ni] << " i:  " << ni << std::endl;
         
