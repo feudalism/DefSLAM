@@ -43,6 +43,7 @@
 
 #include "Verbose.h"
 #include "ImuTypes.h"
+#include "Converter.h"
 
 namespace ORB_SLAM3
 {
@@ -53,6 +54,7 @@ namespace defSLAM
 {
   using ORB_SLAM3::Verbose;
   using ORB_SLAM3::IMU::Point;
+  using ORB_SLAM2::Converter;
   
   System::System(const string &strVocFile, const string &strSettingsFile,
                  const bool bUseViewer)
@@ -668,5 +670,23 @@ namespace defSLAM
 
       return Tcw;
   }
+  
+  void System::SaveTrajectory(ofstream &f)
+  {
+    cv::Mat Tcw = mpTracker->mCurrentFrame.mTcw.clone();
+    cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+    cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
 
+    vector<float> q = Converter::toQuaternion(Rwc);
+
+    f <<
+      // frame times
+      setprecision(6) << mpTracker->mCurrentFrame.mTimeStamp << " "
+      // pose
+      <<  setprecision(9) << twc.at<float>(0)
+                          << " " << twc.at<float>(1)
+                          << " " << twc.at<float>(2) << " "
+                          << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
+      << endl;
+  }
 } // namespace defSLAM

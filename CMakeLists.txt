@@ -90,8 +90,11 @@ ToolsPCL
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Apps)
 
 ## Just receive image from a camera or a video and process them.
-add_executable(DefSLAM Apps/vi.cc) 
+add_executable(DefSLAM Apps/simple_camera.cc) 
 target_link_libraries(DefSLAM ${PROJECT_NAME})
+
+add_executable(DefSLAMVI Apps/vi.cc) 
+target_link_libraries(DefSLAMVI ${PROJECT_NAME})
 
 # add_executable(DefSLAMGTCT Apps/simple_CT.cc) 
 # target_link_libraries(DefSLAMGTCT ${PROJECT_NAME})

@@ -59,6 +59,12 @@ int main(int argc, char **argv)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, sensor, use viewer
     defSLAM::System SLAM(orbVocab, calibFile, defSLAM::System::IMU_MONOCULAR, false);
+    
+    // file for saving trajectory
+    ofstream f;
+    f.open("./trajectory.txt");
+    f << fixed;
+    cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
     cv::Mat im;
     vector<ORB_SLAM3::IMU::Point> vImuMeas;
@@ -91,9 +97,11 @@ int main(int argc, char **argv)
 
         // Pass the image to the SLAM system
         SLAM.TrackMonocularIMU(im, tframe, vImuMeas);
+        SLAM.SaveTrajectory(f);
     }
 
     SLAM.Shutdown();
+    f.close();
 
     return 0;
 }

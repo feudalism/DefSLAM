@@ -51,11 +51,17 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads (local mapping, loop closing, viewer)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, use viewer
-    defSLAM::System SLAM(orbVocab, calibFile, true);
+    defSLAM::System SLAM(orbVocab, calibFile, false);
 
     uint i(0);
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    
+    // file for saving trajectory
+    ofstream f;
+    f.open("./trajectory.txt");
+    f << fixed;
+    cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
     while (cap.isOpened())
     {
@@ -71,10 +77,13 @@ int main(int argc, char **argv)
         }
 
         SLAM.TrackMonocular(imLeft, i);
+        SLAM.SaveTrajectory(f);
+        
         i++;
     }
 
     SLAM.Shutdown();
+    f.close();
 
     return 0;
 }

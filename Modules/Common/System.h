@@ -161,6 +161,8 @@ namespace defSLAM
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
+    
+    void SaveTrajectory(ofstream &f);
 
   protected:
     // Input sensor
