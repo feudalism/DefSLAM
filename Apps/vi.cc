@@ -37,6 +37,12 @@ int main(int argc, char **argv)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, use viewer
     defSLAM::System SLAM(orbVocab, calibFile, false);
+    
+    // file for saving trajectory
+    ofstream f;
+    f.open("./trajectory.txt");
+    f << fixed;
+    cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
     cv::Mat im;
     for(int ni=0; ni<nImages; ni++)
@@ -56,9 +62,11 @@ int main(int argc, char **argv)
 
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im,ni);
+        SLAM.SaveTrajectory(f);
     }
 
     SLAM.Shutdown();
+    f.close();
 
     return 0;
 }
