@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads (local mapping, loop closing, viewer)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, use viewer
-    defSLAM::System SLAM(orbVocab, calibFile, true);
+    defSLAM::System SLAM(orbVocab, calibFile, false);
 
     cv::Mat im;
     for(int ni=0; ni<nImages; ni++)
