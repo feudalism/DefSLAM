@@ -9,25 +9,29 @@ orb_voc=/home/user3/slam/DefSLAM/Vocabulary/ORBvoc.txt
 # # Mandala
 yaml=/home/user3/slam/datasets/mandala0/stereo0_2.yaml
 imgs=/home/user3/slam/datasets/mandala0/images
-ts="/home/user3/slam/datasets/mandala0/timestamps/timestamps_copy.txt"
+ts=/home/user3/slam/datasets/mandala0/timestamps/timestamps_copy.txt
+imu=/home/user3/slam/datasets/mandala0/imu.txt
 
 
 ### Run DefSLAM ###
 # Process a sequence
 # Usage: ./DefSLAM ORBvocabulary calibrationFile video
 echo Starting DefSLAM...
-echo $orb_voc $yaml $imgs $ts
+# echo $orb_voc $yaml $imgs $ts
+echo $orb_voc $yaml $imgs $imu $ts
 echo
 
 ## Run type
 # # Debug
-gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $ts
+# gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $ts
+# gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $imu $ts
 # gdb --command=./debug.sh --args ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Normal run
 # ./DefSLAM $orb_voc $yaml $imgs $ts
+./DefSLAM $orb_voc $yaml $imgs $imu $ts
 # ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Valgrind
-# valgrind --leak-check=yes --log-file="valgrindoutput.txt" ./DefSLAM $orb_voc $yaml $vid $ts
+# valgrind --leak-check=yes --log-file="valgrindoutput.txt" ./DefSLAM $orb_voc $yaml $imgs $imu $ts
 
