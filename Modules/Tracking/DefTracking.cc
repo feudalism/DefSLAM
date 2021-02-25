@@ -642,6 +642,15 @@ namespace defSLAM
   // Initialize scene with a plane.
   void DefTracking::MonocularInitialization()
   {
+    // Reset IMU preintegration
+    if (mSensor == System::IMU_MONOCULAR)
+    {
+        if(mpImuPreintegratedFromLastKF)
+            delete mpImuPreintegratedFromLastKF;
+        mpImuPreintegratedFromLastKF = new Preintegrated(Bias(), *mpImuCalib);
+        mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    }
+    
     /// Initialize the surface and the points in the surface considering a plane
     /// parallel to the camera plane
     if (mCurrentFrame.N > 100)
@@ -652,9 +661,14 @@ namespace defSLAM
       // Create KeyFrame
       KeyFrame *pKFini =
           new GroundTruthKeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+      // KeyFrame* pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+
+      if(mSensor == System::IMU_MONOCULAR)
+          pKFini->mpImuPreintegrated = (Preintegrated*)(NULL);
 
       // Insert KeyFrame in the map
       mpMap->AddKeyFrame(pKFini);
+      
       // Create MapPoints with inliers and associate to KeyFrame
       for (size_t i = 0; i < size_t(mCurrentFrame.N); i++)
       {
@@ -663,16 +677,27 @@ namespace defSLAM
         cv::Mat x3D = (cv::Mat_<float>(3, 1)
                            << (kp.pt.x - mCurrentFrame.cx) / mCurrentFrame.fx,
                        (kp.pt.y - mCurrentFrame.cy) / mCurrentFrame.fy, 1);
+                       
         MapPoint *pNewMP = new DefMapPoint(x3D, pKFini, mpMap);
 
         pNewMP->AddObservation(pKFini, i);
+        
         pKFini->addMapPoint(pNewMP, i);
+        // pKFcur->addMapPoint(pNewMP, i);
+        
         pNewMP->ComputeDistinctiveDescriptors();
         pNewMP->UpdateNormalAndDepth();
-        mpMap->addMapPoint(pNewMP);
+        
         mCurrentFrame.mvpMapPoints[i] = pNewMP;
-        pKFini->GetMapPoint(i);
+        mCurrentFrame.mvbOutlier[i] = false;
+        // pKFini->GetMapPoint(i);
+        
+        mpMap->addMapPoint(pNewMP);
       }
+      
+      // Update Connections
+      pKFini->UpdateConnections();
+      // pKFcur->UpdateConnections();
 
       double *Array;
       Array = new double[_NumberOfControlPointsU * _NumberOfControlPointsV];
@@ -695,20 +720,45 @@ namespace defSLAM
 
       cout << "New map created with " << mpMap->MapPointsInMap() << " points"
            << endl;
+      
+      // if (mSensor == System::IMU_MONOCULAR)
+      // {
+          // pKFcur->mPrevKF = pKFini;
+          // pKFini->mNextKF = pKFcur;
+          // pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF; // already defined above for mCurrentFrame
+
+          // mpImuPreintegratedFromLastKF = new Preintegrated(pKFcur->mpImuPreintegrated->GetUpdatedBias(),pKFcur->mImuCalib);
+      // }
+           
       mLastFrame = Frame(mCurrentFrame);
       mnLastKeyFrameId = uint(mCurrentFrame.mnId);
       mpLastKeyFrame = pKFini;
+      
       mvpLocalKeyFrames.push_back(pKFini);
       mvpLocalMapPoints = mpMap->GetAllMapPoints();
       mpReferenceKF = pKFini;
       mCurrentFrame.mpReferenceKF = pKFini;
       mLastFrame.mpReferenceKF = pKFini;
+      
       mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
       mpMap->mvpKeyFrameOrigins.push_back(pKFini);
+      
       mpLocalMapper->InsertKeyFrame(pKFini);
+      mpLocalMapper->mFirstTs = pKFini->mTimeStamp;
+      
+      mnLastRelocFrameId = mInitialFrame.mnId;
+      
       cv::Mat Tcr =
           mCurrentFrame.mTcw * mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr);
+      
+      // // Compute here initial velocity
+      // vector<KeyFrame*> vKFs = mpMap->GetAllKeyFrames();
+
+      // cv::Mat deltaT = vKFs.back()->GetPose() * vKFs.front()->GetPoseInverse();
+      mVelocity = cv::Mat();
+      // Eigen::Vector3d phi = LogSO3(Converter::toMatrix3d(deltaT.rowRange(0,3).colRange(0,3)));
+      
       // Initialize the SLAM
       static_cast<DefKeyFrame *>(pKFini)->assignTemplate();
       static_cast<DefMap *>(mpMap)->createTemplate(pKFini);
@@ -721,6 +771,7 @@ namespace defSLAM
         static_cast<DefMapDrawer *>(mpMapDrawer)->updateTemplateAtRest();
       }
       mState = OK;
+      initID = pKFini->mnId;
     }
   }
 
