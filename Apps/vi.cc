@@ -72,7 +72,8 @@ int main(int argc, char **argv)
     
     for(int ni = start; ni<nImages; ni++)
     {
-        std::cout << vstrImageFilenames[ni] << " i:  " << ni << std::endl;
+        double tframe = vTimestampsCam[ni];
+        std::cout << "New frame at timestamp: " << tframe << ", frame number:  " << ni << std::endl;
         
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],cv::IMREAD_UNCHANGED);
@@ -83,7 +84,6 @@ int main(int argc, char **argv)
             return 1;
         }
         
-        double tframe = vTimestampsCam[ni];
         
         // Load imu measurements from previous frame
         vImuMeas.clear();
@@ -127,7 +127,7 @@ void LoadMandalaImgs(const string &strImagePath, const string &strPathTimes,
             
             double t;
             ss >> t;
-            vTimeStamps.push_back(t * 1e-6);
+            vTimeStamps.push_back(t * 1e-6 * 1e-3); // 1e-6 to remove zeros, 1e-3 to get time in s?
             
             // image
             string filename = ss.str();
@@ -167,7 +167,7 @@ void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps,
             item = s.substr(0, pos);
             data[6] = stod(item);
 
-            vTimeStamps.push_back(data[0]);
+            vTimeStamps.push_back(data[0] * 1e-3); // time in s?
             vAcc.push_back(cv::Point3f(data[4],data[5],data[6]));
             vGyro.push_back(cv::Point3f(data[1],data[2],data[3]));
         }
