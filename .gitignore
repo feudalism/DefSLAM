@@ -2,12 +2,14 @@
 *.vscode/*
 build/*
 lib/*
+*pycache*
 
 # HUGE FILES
 */ORBvoc.txt
 
 # GENERATED DURING PROGRAM RUN
 Apps/*.txt
+!Apps/traj*.txt
 
 # GENERATED DURING BUILD
 Apps/*GT
