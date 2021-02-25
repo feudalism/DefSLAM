@@ -782,7 +782,7 @@ namespace defSLAM
           return;
       }
 
-      // cout << "start loop. Total meas:" << mlQueueImuData.size() << endl;
+      std::cout << "Preintegrating IMU... IMU queue has" << mlQueueImuData.size() << " measurements." << std::endl;
 
       mvImuFromLastFrame.clear();
       mvImuFromLastFrame.reserve(mlQueueImuData.size());
@@ -801,6 +801,9 @@ namespace defSLAM
               {
                   Point* m = &mlQueueImuData.front();
                   cout.precision(17);
+                  
+                  std::cout << "... IMU measurement at time " << m->t << std::endl;
+                  
                   if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp-0.001l)
                   {
                       mlQueueImuData.pop_front();
@@ -825,7 +828,6 @@ namespace defSLAM
           if(bSleep)
               usleep(500);
       }
-
 
       const int n = mvImuFromLastFrame.size()-1;
       Preintegrated* pImuPreintegratedFromLastFrame = new Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
