@@ -3,8 +3,15 @@
 #include <opencv2/core/core.hpp>
 #include <System.h>
 
+#include <string.h> 
+#include <unistd.h> 
+
 void LoadMandalaImgs(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImageFilenames, vector<double> &vTimeStamps);
+
+void readGTData(const string &strGTTrajPath, vector<double> &vTimeStampsGT,
+                vector<double> &vX, vector<double> &vY, vector<double> &vZ,
+                vector<double> &vq1, vector<double> &vq2, vector<double> &vq3, vector<double> &vq4);
 
 int main(int argc, char **argv)
 {
@@ -14,7 +21,7 @@ int main(int argc, char **argv)
     string imgFolder = argv[3];   
     string tsCamFile = argv[4];
     
-	// prints usage if wrong number of arguments
+    // prints usage if wrong number of arguments
     if (argc != 5)
     {
         cerr << endl
@@ -22,14 +29,22 @@ int main(int argc, char **argv)
              << endl;
         return 1;
     }
-    
-    // initialise data containers, load data
+                
+    // initialise data containers
+    string strGTTrajPath = "/home/user3/slam/DefSLAM/Apps/traj_mandala0_gt.txt";
     vector<string> vstrImageFilenames;
     vector<double> vTimeStampsCam;
+    vector<double> vTimeStampsGT;
+    vector<double> vX, vY, vZ, vqx, vqy, vqz, vqw;
+    
+    // load GT data
+    std::cout << "Loading GT data... ";
+    readGTData(strGTTrajPath, vTimeStampsGT, vX,  vY, vZ, vqx, vqy, vqz, vqw);
+    std::cout << "Loaded GT data!" << std::endl;
 
-    cout << "Loading images..." << endl;
+    std::cout << "Loading images...";
     LoadMandalaImgs(imgFolder, tsCamFile, vstrImageFilenames, vTimeStampsCam);
-    cout << "Loaded images!" << endl;
+    std::cout << "Loaded images!" << std::endl;
 
     const int nImages = vstrImageFilenames.size();
     
@@ -102,4 +117,47 @@ void LoadMandalaImgs(const string &strImagePath, const string &strPathTimes,
 
         }
     }
+}
+
+void readGTData(const string &strGTTrajPath, vector<double> &vTimeStampsGT,
+                vector<double> &vX, vector<double> &vY, vector<double> &vZ,
+                vector<double> &vqx, vector<double> &vqy, vector<double> &vqz, vector<double> &vqw)
+{
+    ifstream fTraj;
+    fTraj.open(strGTTrajPath.c_str());
+    
+    while(!fTraj.eof())
+    {
+        string s;
+        getline(fTraj,s);
+        
+        if(!s.empty())
+        {
+            string item;
+            size_t pos = 0;
+            double data[8];
+            int count = 0;
+
+            while ((pos = s.find(' ')) != string::npos) {
+                item = s.substr(0, pos);
+                data[count++] = stod(item);
+                s.erase(0, pos + 1);
+            }
+            item = s.substr(0, pos);
+            data[7] = stod(item);
+
+            vTimeStampsGT.push_back(data[0]);
+            vX.push_back(data[1]);
+            vY.push_back(data[2]);
+            vZ.push_back(data[3]);
+            vqx.push_back(data[4]);
+            vqy.push_back(data[5]);
+            vqz.push_back(data[6]);
+            vqw.push_back(data[7]);
+        }
+        
+    }
+    
+    fTraj.close();
+    
 }
