@@ -704,4 +704,14 @@ namespace defSLAM
     mnLastKeyFrameId = mCurrentFrame->mnId;
     mpLastKeyFrame = pKF;
   }
+
+  void DefTracking::setVelocity(const cv::Mat &vel)
+  {
+      mVelocity = vel;
+  }
+  
+  Frame DefTracking::getLastFrame()
+  {
+      return mLastFrame;
+  }
 } // namespace defSLAM

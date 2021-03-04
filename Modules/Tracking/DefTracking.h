@@ -76,6 +76,9 @@ namespace defSLAM
                                            const cv::Mat &imDepth,
                                            const double &timestamp,
                                            cv::Mat _mask = cv::Mat());
+                                           
+    void setVelocity(const cv::Mat &vel);
+    Frame getLastFrame();
 
   protected:
     // Main function of tracking.
