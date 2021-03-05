@@ -108,6 +108,12 @@ int main(int argc, char **argv)
   cout << "Start processing sequence ..." << endl;
   cout << "Images in the sequence: " << nImages << endl
        << endl;
+    
+  // File for saving trajectory
+  ofstream f;
+  f.open("./trajectory.txt");
+  f << fixed;
+  cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
   // Main loop
   size_t start = 200;
@@ -145,10 +151,12 @@ int main(int argc, char **argv)
     cv::Mat _mask(imLeftRect.rows, imLeftRect.cols, CV_8UC1, cv::Scalar(255));
 
     SLAM.TrackMonocularGT(imLeftRect, imRightRect, ni, _mask);
+    SLAM.SaveTrajectory(f);
   }
 
   // Stop all threads
   SLAM.Shutdown();
+  f.close();
 
   return 0;
 }

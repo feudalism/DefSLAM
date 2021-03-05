@@ -43,6 +43,8 @@
 
 namespace defSLAM
 {
+  using ORB_SLAM2::Converter;
+  
   System::System(const string &strVocFile, const string &strSettingsFile,
                  const bool bUseViewer)
       : mSensor(MONOCULAR), mpLoopCloser(NULL), mpViewer(static_cast<Viewer *>(nullptr)),
@@ -480,5 +482,47 @@ namespace defSLAM
   {
     unique_lock<mutex> lock(mMutexState);
     return mTrackingState;
+  }
+  
+  std::string System::getDataAsString()
+  {
+    cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
+    cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+    cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+    vector<float> q = Converter::toQuaternion(Rwc);
+    
+    std::stringstream stream;
+    stream <<
+      // frame times
+      std::setprecision(6) << mpTracker->mCurrentFrame->mTimeStamp << " "
+      // pose
+      <<  std::setprecision(9) << twc.at<float>(0)
+                              << " " << twc.at<float>(1)
+                              << " " << twc.at<float>(2) << " "
+                              << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
+      << endl;
+    std::string data = stream.str();
+      
+    return data;
+  }
+  
+  void System::SaveTrajectory(ofstream &f)
+  {
+    cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
+    cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+    cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+    vector<float> q = Converter::toQuaternion(Rwc);
+
+    f <<
+      // frame times
+      setprecision(6) << mpTracker->mCurrentFrame->mTimeStamp << " "
+      // pose
+      <<  setprecision(9) << twc.at<float>(0)
+                          << " " << twc.at<float>(1)
+                          << " " << twc.at<float>(2) << " "
+                          << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
+      << endl;
   }
 } // namespace defSLAM

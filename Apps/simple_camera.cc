@@ -56,6 +56,12 @@ int main(int argc, char **argv)
     uint i(0);
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    
+    // file for saving trajectory
+    ofstream f;
+    f.open("./trajectory.txt");
+    f << fixed;
+    cout << endl << "Saving camera trajectory to trajectory.txt" << endl;
 
     while (cap.isOpened())
     {
@@ -71,10 +77,13 @@ int main(int argc, char **argv)
         }
 
         SLAM.TrackMonocular(imLeft, i);
+        SLAM.SaveTrajectory(f);
+        
         i++;
     }
 
     SLAM.Shutdown();
+    f.close();
 
     return 0;
 }
