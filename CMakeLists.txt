@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(DeformableSLAM)
 
-SET(CMAKE_BUILD_TYPE RELEASE)
+SET(CMAKE_BUILD_TYPE DEBUG)
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -88,8 +88,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Apps)
 add_executable(DefSLAM Apps/simple_camera.cc) 
 target_link_libraries(DefSLAM ${PROJECT_NAME})
 
-add_executable(DefSLAMGTCT Apps/simple_CT.cc) 
-target_link_libraries(DefSLAMGTCT ${PROJECT_NAME})
+# add_executable(DefSLAMGTCT Apps/simple_CT.cc) 
+# target_link_libraries(DefSLAMGTCT ${PROJECT_NAME})
 
-add_executable(DefSLAMGT Apps/stereo_groundtruth.cc)
-target_link_libraries(DefSLAMGT ${PROJECT_NAME})
+# add_executable(DefSLAMGT Apps/stereo_groundtruth.cc)
+# target_link_libraries(DefSLAMGT ${PROJECT_NAME})

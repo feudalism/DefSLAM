@@ -1,0 +1,15 @@
+# BUILD FOLDERS
+*.vscode/*
+build/*
+lib/*
+
+# HUGE FILES
+*/ORBvoc.txt
+
+# GENERATED DURING PROGRAM RUN
+Apps/*.txt
+
+# GENERATED DURING BUILD
+Apps/*GT
+Apps/*GTCT
+Apps/*.png
