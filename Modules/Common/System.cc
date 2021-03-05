@@ -41,6 +41,9 @@
 #include <thread>
 #include <unistd.h>
 
+#include "Converter.h"
+#include <sstream>
+
 namespace defSLAM
 {
   using ORB_SLAM2::Converter;
