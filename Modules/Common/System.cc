@@ -572,4 +572,53 @@ namespace defSLAM
       mpTracker->mlbLost.push_back(true);
   }
 
+  void System::softReset()
+  {
+
+    cout << "System resetting... (soft reset)" << endl;
+    if (mpViewer)
+    {
+      mpViewer->RequestStop();
+      while (!mpViewer->isStopped())
+        usleep(3000);
+    }
+
+    // Reset Local Mapping
+    cout << "Reseting Local Mapper...";
+    mpLocalMapper->RequestReset();
+    cout << " done" << endl;
+
+    // // Reset Loop Closing
+    // cout << "Reseting Loop Closing...";
+    // if (mpLoopClosing)
+      // mpLoopClosing->RequestReset();
+    // cout << " done" << endl;
+
+    // // Clear BoW Database
+    // cout << "Reseting Database...";
+    // mpKeyFrameDB->clear();
+    // cout << " done" << endl;
+
+    // // Clear Map (this erase MapPoints and KeyFrames)
+    // mpMap->clear();
+
+    KeyFrame::nNextId = 0;
+    Frame::nNextId = 0;
+    mpTracker->mState = Tracking::eTrackingState::LOST;
+
+    // if (mpTracker->mpInitializer)
+    // {
+      // delete mpTracker->mpInitializer;
+      // mpTracker->mpInitializer = static_cast<Initializer *>(NULL);
+    // }
+
+    // mpTracker->mlRelativeFramePoses.clear();
+    // mpTracker->mlpReferences.clear();
+    // mpTracker->mlFrameTimes.clear();
+    // mpTracker->mlbLost.clear();
+
+    if (mpViewer)
+      mpViewer->Release();
+  }
+
 } // namespace defSLAM

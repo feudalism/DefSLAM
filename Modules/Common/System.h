@@ -141,6 +141,8 @@ namespace defSLAM
     void forceTrajectory(const double &x, const double &y, const double &z, 
                     const double &qx, const double &qy, const double &qz, const double &qw);
 
+    void softReset();
+
   protected:
     // Input sensor
     eSensor mSensor;

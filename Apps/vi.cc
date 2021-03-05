@@ -94,6 +94,8 @@ int main(int argc, char **argv)
             double qw = vqw[idx];
 
             SLAM.forceTrajectory(x, y, z, qx, qy, qz, qw);
+            
+            SLAM.softReset();
         }
         
         // Save trajectory to text file
