@@ -525,4 +525,33 @@ namespace defSLAM
                           << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
       << endl;
   }
+      
+  void System::forceTrajectory(const double &x, const double &y, const double &z, 
+                    const double &qx, const double &qy, const double &qz, const double &qw)
+  {
+      std::cout << "Force updating trajectory!" << std::endl;
+      
+      // update currentFrame->Tcw
+      Eigen::Matrix3d Rwc2 = Eigen::Quaterniond(qw, qx, qy, qz).toRotationMatrix();
+      cv::Mat Rwc = Converter::toCvMat(Rwc2);
+      cv::Mat Rcw = Rwc.t();
+      
+      cv::Mat twc = cv::Mat(3, 1, CV_32F);
+      twc.at<float>(0) = x;
+      twc.at<float>(1) = y;
+      twc.at<float>(2) = z;
+      cv::Mat tcw = -Rcw*twc;
+      
+      cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw;
+      tcw.copyTo(Tcw.rowRange(0, 3).col(3));
+      Rcw.copyTo(Tcw.rowRange(0, 3).colRange(0, 3));
+      
+      mpTracker->mCurrentFrame->SetPose(Tcw);
+
+      // set to LOST
+      mpTracker->mState = Tracking::eTrackingState::LOST;
+      mpTracker->mlbLost.pop_back();
+      mpTracker->mlbLost.push_back(true);
+  }
+
 } // namespace defSLAM

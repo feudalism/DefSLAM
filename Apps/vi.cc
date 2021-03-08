@@ -79,6 +79,24 @@ int main(int argc, char **argv)
 
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im,ni);
+        
+        // Force update trajectory
+        if((ni >= 230) && (ni < 240))
+        {
+            std::cout << "------------- --------------" << std::endl;
+            int idx = ni - start;
+            double x = vX[idx];
+            double y = vY[idx];
+            double z = vZ[idx];
+            double qx = vqx[idx];
+            double qy = vqy[idx];
+            double qz = vqz[idx];
+            double qw = vqw[idx];
+
+            SLAM.forceTrajectory(x, y, z, qx, qy, qz, qw);
+        }
+        
+        // Save trajectory to text file
         SLAM.SaveTrajectory(f);
     }
 

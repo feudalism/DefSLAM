@@ -138,6 +138,8 @@ namespace defSLAM
     
     std::string getDataAsString();
     void SaveTrajectory(ofstream &f);
+    void forceTrajectory(const double &x, const double &y, const double &z, 
+                    const double &qx, const double &qy, const double &qz, const double &qw);
 
   protected:
     // Input sensor
