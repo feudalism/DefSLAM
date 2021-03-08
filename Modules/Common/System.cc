@@ -548,6 +548,24 @@ namespace defSLAM
       
       mpTracker->mCurrentFrame->SetPose(Tcw);
 
+      // update velocity for motion model
+      Frame lastFrame = static_cast<DefTracking *>(mpTracker)->getLastFrame();
+        if (!lastFrame.mTcw.empty())
+        {
+          cv::Mat LastTwc = cv::Mat::eye(4, 4, CV_32F);
+          lastFrame.GetRotationInverse().copyTo(
+              LastTwc.rowRange(0, 3).colRange(0, 3));
+          lastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
+          static_cast <DefTracking *>(mpTracker)->setVelocity(Tcw * LastTwc);
+        }
+        else
+          static_cast <DefTracking *>(mpTracker)->setVelocity(cv::Mat());
+
+      // update relative frame poses
+      cv::Mat Tcr = Tcw * mpTracker->mCurrentFrame->mpReferenceKF->GetPoseInverse();
+      mpTracker->mlRelativeFramePoses.pop_back();
+      mpTracker->mlRelativeFramePoses.push_back(Tcr);
+
       // set to LOST
       mpTracker->mState = Tracking::eTrackingState::LOST;
       mpTracker->mlbLost.pop_back();
