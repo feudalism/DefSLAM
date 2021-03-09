@@ -55,7 +55,6 @@ def plot(t, data, data_labels, file_label, min_t, max_t, offset=0, axes=None):
             axes[row][col].plot(t, data[label], linewidth=1., linestyle=':', label=file_label)
         else:
             axes[row][col].plot(t, data[label], linewidth=1., marker="o", markersize=1.5, label=file_label)
-        # axes[row][col].plot(t, data[label], linestyle="", marker="o", markersize=2.5, label=file_label)
         axes[row][col].set_xlim(left=min_t, right=max_t)
 
         if len(label) == 1:

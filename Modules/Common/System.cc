@@ -533,6 +533,24 @@ namespace defSLAM
                           << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
       << endl;
   }
+  
+  void System::savePredictedTrajectory(ofstream &f, cv::Mat pred)
+  {
+    cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
+    cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+
+    vector<float> q = Converter::toQuaternion(Rwc);
+
+    f <<
+      // frame times
+      setprecision(6) << mpTracker->mCurrentFrame->mTimeStamp << " "
+      // pose
+      <<  setprecision(9) << pred.at<float>(0)
+                          << " " << pred.at<float>(1)
+                          << " " << pred.at<float>(2) << " "
+                          << q[0] << " " << q[1] << " " << q[2] << " " << q[3]
+      << endl;
+  }
       
   void System::updateTrajectory(const double &x, const double &y, const double &z, 
                     const double &qx, const double &qy, const double &qz, const double &qw)

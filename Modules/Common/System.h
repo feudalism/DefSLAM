@@ -138,6 +138,7 @@ namespace defSLAM
     
     std::string getDataAsString();
     void SaveTrajectory(ofstream &f);
+    void savePredictedTrajectory(ofstream &f, cv::Mat pred);
     void updateTrajectory(const double &x, const double &y, const double &z, 
                     const double &qx, const double &qy, const double &qz, const double &qw);
     cv::Mat getCoordinates();

@@ -85,8 +85,11 @@ int main(int argc, char **argv)
     
     // file for saving trajectory
     ofstream f;
+    ofstream f_rw;
     f.open("./trajectory.txt");
+    f_rw.open("./trajectory_rw.txt");
     f << fixed;
+    f_rw << fixed;
 
     cv::Mat im;
     size_t start = 200;
@@ -129,6 +132,7 @@ int main(int argc, char **argv)
             state = kf.predict(control);
             std::cout << "ni: " << ni << " predicted" << std::endl;
             std::cout << state << std::endl;
+            SLAM.savePredictedTrajectory(f_rw, state);
 
             // measure
             int idx = ni - start;
@@ -155,6 +159,7 @@ int main(int argc, char **argv)
 
     SLAM.Shutdown();
     f.close();
+    f_rw.close();
 
     return 0;
 }
