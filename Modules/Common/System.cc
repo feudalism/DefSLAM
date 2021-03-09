@@ -483,7 +483,15 @@ namespace defSLAM
     unique_lock<mutex> lock(mMutexState);
     return mTrackingState;
   }
-  
+   
+  cv::Mat System::getCoordinates()
+  {
+      cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
+      cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+      return -Rwc*Tcw.rowRange(0,3).col(3);
+  }
+   
+   
   std::string System::getDataAsString()
   {
     cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
