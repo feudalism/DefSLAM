@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 
         setPostValsToOptimVals(kf, state);
 
-        // load IMU measurements to next frame
+        // load IMU measurements from prev fraem to current
         if(idx > 0)
         {
             imuQueueStartIndex = firstImuIndex;
@@ -118,32 +118,30 @@ int main(int argc, char **argv)
         // kalman implementation
         if((ni >= kalman_start) && (ni < kalman_end))
         {
+            // imu queue from prev frame up till current
             for(size_t iimu=0; iimu<vImuXQueue.size(); iimu++)
             {
-                // predict next position from optimised values and random walk model
+                const float currentImuTs = vTimeStampsIMU[imuQueueStartIndex + iimu];
+
+                // predict next position from random walk model
                 cv::randn(control, mean, stddev);
                 kf.predict(control);
 
-                const float currentImuTs = vTimeStampsIMU[imuQueueStartIndex + iimu];
                 saveTrajectory(f_rw, currentImuTs,
                     state.at<float>(0), state.at<float>(1), state.at<float>(2),
                     qx, qy, qz, qw);
 
+                // correct prediction using measurements
+                meas.at<float>(0) = vxmeas[imuQueueStartIndex + iimu];
+                meas.at<float>(1) = vymeas[imuQueueStartIndex + iimu];
+                meas.at<float>(2) = vzmeas[imuQueueStartIndex + iimu];
+                kf.correct(meas);
+
+                saveTrajectory(f, currentImuTs,
+                    state.at<float>(0), state.at<float>(1), state.at<float>(2),
+                    qx, qy, qz, qw);
             }
-            std::cout << std::endl;
-
-
-            // // correct
-            // // noisy stereo gt coordinates
-            // meas.at<float>(0) = vxmeas[idx];
-            // meas.at<float>(1) = vymeas[idx];
-            // meas.at<float>(2) = vzmeas[idx];
-            // kf.correct(meas);
-
         }
-
-        saveTrajectory(f, ni, kf.statePost.at<float>(0), kf.statePost.at<float>(1), kf.statePost.at<float>(2),
-            qx, qy, qz, qw);
     }
 
     f.close();
