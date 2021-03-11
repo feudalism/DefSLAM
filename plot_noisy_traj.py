@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
-from traj_parser import parse, plot
+from traj_parser import parse, plot, add_noise, imu_interpolate
 
 traj_data = {'stereoGT': "./Apps/traj_mandala0_gt.txt",
-            'measurements': "./Apps/traj_mandala0_gt_noisy.txt",
-            'kalman' : "./Apps/trajectory.txt",
-            'mono' : "./Apps/traj_mandala0_mono.txt"}
+            'imu': "./Apps/traj_mandala0_gt_imu.txt",
+            'noisy' : "./Apps/traj_mandala0_gt_imu_noisy.txt",
+            }
 data_labels = ['ts', 'x', 'y', 'z', 'q1', 'q2', 'q3', 'q4']
+filename_imu = imu_interpolate(traj_data['stereoGT'], data_labels, 
+    num_imu_between_frames = 10)
+add_noise(filename_imu)
     
 axes = None
 for label, filepath in traj_data.items():
