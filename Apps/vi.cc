@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     }
                 
     // initialise data containers
-    string strGTTrajPath = "/home/user3/slam/DefSLAM/Apps/traj_mandala0_gt.txt";
+    string strGTTrajPath = "/home/user3/slam/DefSLAM/Apps/traj_mandala0_gt_noisy.txt";
     vector<string> vstrImageFilenames;
     vector<double> vTimeStampsCam;
     vector<double> vTimeStampsGT;
