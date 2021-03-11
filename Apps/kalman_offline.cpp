@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     // random walk
     const double mean = 0.0;
-    const double stddev = 0.025;
+    const double stddev = 0.01;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(mean, stddev);
 
@@ -76,13 +76,14 @@ int main(int argc, char **argv)
     std::vector<float> vImuXQueue, vImuYQueue, vImuZQueue;
     // find index of first IMU data that appears after or during the first frame
     int firstImuIndex = 0;
+    int imuQueueStartIndex = 0;
     while(vTimeStampsIMU[firstImuIndex] <= vTimeStampsMono[0])
       firstImuIndex++;
     firstImuIndex--;
 
     for(size_t ni=start; ni<(nImages + start); ni++)
     {
-        std::cout << "ni " << ni << " -- ";
+        std::cout << "ni " << ni << " -- " << std::endl;
         const int idx = ni - start;
         const float currentFrameTs = vTimeStampsMono[idx];
 
@@ -105,6 +106,7 @@ int main(int argc, char **argv)
         // load IMU measurements to next frame
         if(idx > 0)
         {
+            imuQueueStartIndex = firstImuIndex;
             loadImuQueue(vImuXQueue, firstImuIndex,
                 vTimeStampsIMU, currentFrameTs, vxmeas);
             loadImuQueue(vImuYQueue, firstImuIndex,
@@ -116,21 +118,20 @@ int main(int argc, char **argv)
         // kalman implementation
         if((ni >= kalman_start) && (ni < kalman_end))
         {
-            // std::vector<float> vImuXQueue(&vxmeas[idx], &vxmeas[idx+1]);
-            std::for_each(std::begin(vImuXQueue), std::end(vImuXQueue), [](float const& value) {
-                std::cout << value << " ";
-            });
+            for(size_t iimu=0; iimu<vImuXQueue.size(); iimu++)
+            {
+                // predict next position from optimised values and random walk model
+                cv::randn(control, mean, stddev);
+                kf.predict(control);
+
+                const float currentImuTs = vTimeStampsIMU[imuQueueStartIndex + iimu];
+                saveTrajectory(f_rw, currentImuTs,
+                    state.at<float>(0), state.at<float>(1), state.at<float>(2),
+                    qx, qy, qz, qw);
+
+            }
             std::cout << std::endl;
 
-            // // predict
-            // // random walk          
-            // cv::randn(control, mean, stddev);
-
-            // // set coordinates from DefSLAM to be 
-            // rw = kf.predict(control);
-            // saveTrajectory(f_rw, ni,
-                // rw.at<float>(0), rw.at<float>(1), rw.at<float>(2),
-                // qx, qy, qz, qw);
 
             // // correct
             // // noisy stereo gt coordinates
