@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     // random walk
     const double mean = 0.0;
-    const double stddev = 0.01;
+    const double stddev = 0.005;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(mean, stddev);
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     const int nImages = vTimeStampsMono.size();
     size_t start = 200;
     size_t kalman_start = 220;
-    size_t kalman_end = 250;
+    size_t kalman_end = 310;
 
     size_t stateSize = 3;
     size_t measSize = 3;

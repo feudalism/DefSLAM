@@ -121,7 +121,7 @@ def add_noise(filepath):
             data = [float(i) for i in data]
             npdata = np.asarray(data, dtype=np.float64).flatten()
 
-            noise_xyz = 0.05 * np.random.randn(3) - 0.0025
+            noise_xyz = 0.005 * np.random.randn(3) - 0.00025
             noise_q = 0.005 * np.random.randn(4) - 0.00025
             noisy_data = npdata + np.hstack((noise_xyz, noise_q))
 
