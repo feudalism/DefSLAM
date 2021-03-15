@@ -143,6 +143,7 @@ namespace defSLAM
     void updateTrajectory(const double &x, const double &y, const double &z, 
                     const double &qx, const double &qy, const double &qz, const double &qw);
     cv::Mat getCoordinates();
+    void updateCoordinates(const double &x, const double &y, const double &z);
 
   protected:
     // Input sensor

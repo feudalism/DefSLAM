@@ -21,7 +21,19 @@ void loadIMU(const std::string &strImuPath,
                 std::vector<float> &vX, std::vector<float> &vY, std::vector<float> &vZ,
                 std::vector<float> &vq1, std::vector<float> &vq2, std::vector<float> &vq3, std::vector<float> &vq4);
                 
+void saveTrajectory(std::ofstream &f, const float &t, const float &x, const float &y, const float &z,
+        const float &q1, const float &q2, const float &q3, const float &q4);
+
+size_t loadImuQueue(std::vector<float> &vImuQueue, 
+        size_t firstImuIndex,
+        std::vector<float> &vTimeStampsImu,
+        const float &currentFrameTs, std::vector<float> &vMeasurement);
+
 cv::KalmanFilter createKF();
+void initialiseKF(cv::KalmanFilter &kf);
+void setPostValsToOptimVals(cv::KalmanFilter &kf, const cv::Mat &state);
+
+std::ofstream openFile(const std::string &filepath);
 
 int main(int argc, char **argv)
 {
@@ -40,80 +52,78 @@ int main(int argc, char **argv)
         return 1;
     }
                 
-    // initialise data containers
-    string strGTTrajPath = "traj_mandala0_gt_noisy.txt";
+    // load GT data
+    // string strGTTrajPath = "traj_mandala0_gt_noisy.txt";
+    // vector<double> vTimeStampsGT;
     vector<string> vstrImageFilenames;
-    vector<double> vTimeStampsCam;
-    vector<double> vTimeStampsGT;
-    vector<double> vX, vY, vZ, vqx, vqy, vqz, vqw;
+    vector<double> vTimeStampsMono;
+    // vector<double> vX, vY, vZ, vqx, vqy, vqz, vqw;
+    // std::cout << "Loading GT data... ";
+    // readGTData(strGTTrajPath, vTimeStampsGT, vX,  vY, vZ, vqx, vqy, vqz, vqw);
+    // std::cout << "Loaded GT data!" << std::endl;
 
     // load noisy imu data
     std::string strImuPath = "traj_mandala0_gt_imu_noisy.txt";
     std::vector<float> vTimeStampsIMU;
     std::vector<float> vxmeas, vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas;
-    loadIMU(strImuPath, vTimeStampsIMU,
-            vxmeas,  vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas);
+    loadIMU(strImuPath, vTimeStampsIMU, vxmeas,  vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas);
+
+    std::cout << "Loading images...";
+    LoadMandalaImgs(imgFolder, tsCamFile, vstrImageFilenames, vTimeStampsMono);
+    std::cout << "Loaded images!" << std::endl;
 
     // kalman filter
     cv::KalmanFilter kf = createKF();
-    
-    // load GT data
-    std::cout << "Loading GT data... ";
-    readGTData(strGTTrajPath, vTimeStampsGT, vX,  vY, vZ, vqx, vqy, vqz, vqw);
-    std::cout << "Loaded GT data!" << std::endl;
 
-    std::cout << "Loading images...";
-    LoadMandalaImgs(imgFolder, tsCamFile, vstrImageFilenames, vTimeStampsCam);
-    std::cout << "Loaded images!" << std::endl;
-
-    const int nImages = vstrImageFilenames.size();
-    
-    // Kalman Filter
-    int stateSize = 3;
-    int measSize = 3;
-    int contrSize = 3;
-    cv::KalmanFilter kf(stateSize, measSize, contrSize, CV_32F);
-
-    cv::Mat state(stateSize, 1, CV_32F);  // [x,y,z]
-    cv::Mat meas(measSize, 1, CV_32F);    // [zx, zy, zz]
-    cv::Mat control(contrSize, 1, CV_32F);    // [ux, uy, uz]
-
-    cv::setIdentity(kf.transitionMatrix);
-    cv::setIdentity(kf.controlMatrix);
-    cv::setIdentity(kf.measurementMatrix);
-
+    // random walk
     const double mean = 0.0;
-    const double stddev = 0.05;
+    const double stddev = 0.005;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(mean, stddev);
-
-    // kf.processNoiseCov.at<float>(0) = distribution(generator);
-    // kf.processNoiseCov.at<float>(4) = distribution(generator);
-    // kf.processNoiseCov.at<float>(8) = distribution(generator);
-    // std::cout << kf.processNoiseCov << std::endl;
-
-    setIdentity(kf.processNoiseCov, cv::Scalar(0.1));
-    setIdentity(kf.measurementNoiseCov, cv::Scalar(0.05));
 
     // Create SLAM system. It initializes all system threads (local mapping, loop closing, viewer)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, use viewer
     defSLAM::System SLAM(orbVocab, calibFile, false);
-    
-    // file for saving trajectory
-    ofstream f;
-    ofstream f_rw;
-    f.open("./trajectory.txt");
-    f_rw.open("./trajectory_rw.txt");
-    f << fixed;
-    f_rw << fixed;
 
     cv::Mat im;
+    const size_t nImages = vstrImageFilenames.size();
     size_t start = 200;
+    size_t kalman_start = 220;
+    size_t kalman_end = 260;
+
+    size_t stateSize = 3;
+    size_t measSize = 3;
+    size_t controlSize = 3;
+
+    cv::Mat state(stateSize, 1, CV_32F);
+    cv::Mat quats(stateSize, 1, CV_32F);
+    cv::Mat statePost(stateSize, 1, CV_32F);
+    cv::Mat processNoise(stateSize, 1, CV_32F);
+    cv::Mat control(controlSize, 1, CV_32F);
+
+    cv::Mat meas(measSize, 1, CV_32F);
+    cv::Mat rw(stateSize, 1, CV_32F);
+
+    std::vector<float> vImuXQueue, vImuYQueue, vImuZQueue;
+    // find index of first IMU data that appears after or during the first frame
+    int firstImuIndex = 0;
+    int imuQueueStartIndex = 0;
+    // while(vTimeStampsIMU[firstImuIndex] <= vTimeStampsMono[0])
+      // firstImuIndex++;
+    // firstImuIndex--;
+
+    // file for saving trajectory
+    std::ofstream f_mono = openFile("./trajectory.txt");
+    std::ofstream f_kalman = openFile("./trajectory_kalman.txt");
+    std::ofstream f_rw = openFile("./trajectory_rw.txt");
     
-    for(int ni=start; ni<nImages; ni++)
+    for(int ni=start; ni<(nImages + start); ni++)
     {
-        std::cout << vstrImageFilenames[ni] << " i:  " << ni << std::endl;
+        std::cout << vstrImageFilenames[ni] << std::endl
+            << " i:  " << ni << std::endl;
+        const int idx = ni - start;
+        const float currentFrameTs = ni;
 
         // Read image from file
         im = cv::imread(vstrImageFilenames[ni],cv::IMREAD_UNCHANGED);
@@ -124,58 +134,75 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        double tframe = vTimeStampsCam[ni];
-
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im,ni);
-        
-        // Force update trajectory
-        if((ni >= 220) && (ni < 240))
+        state = SLAM.getCoordinates();
+        std::vector<float> q = SLAM.getQuaternions();
+        quats.at<float>(0) = q[0];
+        quats.at<float>(1) = q[1];
+        quats.at<float>(2) = q[2];
+        quats.at<float>(3) = q[3];
+
+        if(ni == (kalman_start - 1))
+            initialiseKF(kf);
+
+        setPostValsToOptimVals(kf, state);
+
+        // load IMU measurements from prev fraem to current
+        if(idx > 0)
         {
-            std::cout << "------------- --------------" << std::endl;
+            imuQueueStartIndex = firstImuIndex;
+            loadImuQueue(vImuXQueue, firstImuIndex,
+                vTimeStampsIMU, currentFrameTs, vxmeas);
+            loadImuQueue(vImuYQueue, firstImuIndex,
+                vTimeStampsIMU, currentFrameTs, vymeas);
+            firstImuIndex = loadImuQueue(vImuZQueue, firstImuIndex,
+                vTimeStampsIMU, currentFrameTs, vzmeas);
+        }
         
-            // Initialise Kalman filter
-            if(ni == 220)
+        // kalman implementation
+        if((ni >= kalman_start) && (ni < kalman_end))
+        {
+            std::cout << "------------- KALMAN --------------" << std::endl;
+            
+            // imu queue from prev frame up till current
+            for(size_t iimu=0; iimu<vImuXQueue.size(); iimu++)
             {
-                std::cout << "Kalman initial state (at frame " << ni << ") : " << std::endl;
-                kf.statePre = SLAM.getCoordinates();
-                std::cout << kf.statePre << std::endl;
+                const float currentImuTs = vTimeStampsIMU[imuQueueStartIndex + iimu];
+                
+                // predict next position from random walk model
+                cv::randn(control, mean, stddev);
+                kf.predict(control);
+
+                saveTrajectory(f_rw, currentImuTs,
+                    state.at<float>(0), state.at<float>(1), state.at<float>(2),
+                    quats.at<float>(0), quats.at<float>(1), quats.at<float>(2), quats.at<float>(3));
+
+                // correct prediction using measurements
+                meas.at<float>(0) = vxmeas[imuQueueStartIndex + iimu];
+                meas.at<float>(1) = vymeas[imuQueueStartIndex + iimu];
+                meas.at<float>(2) = vzmeas[imuQueueStartIndex + iimu];
+                kf.correct(meas);
+
+                saveTrajectory(f_kalman, currentImuTs,
+                    state.at<float>(0), state.at<float>(1), state.at<float>(2),
+                    quats.at<float>(0), quats.at<float>(1), quats.at<float>(2), quats.at<float>(3));
+
+                // SLAM.updateTrajectory(kf.statePost.at<float>(0), kf.statePost.at<float>(1),
+                    // kf.statePost.at<float>(2),
+                    // quats.at<float>(0), quats.at<float>(1), quats.at<float>(2), quats.at<float>(3));
+                SLAM.updateCoordinates(kf.statePost.at<float>(0), kf.statePost.at<float>(1),
+                    kf.statePost.at<float>(2));
             }
-
-            // predict
-            control.at<float>(0) = distribution(generator);
-            control.at<float>(1) = distribution(generator);
-            control.at<float>(2) = distribution(generator);
-            state = kf.predict(control);
-            std::cout << "ni: " << ni << " predicted" << std::endl;
-            std::cout << state << std::endl;
-            SLAM.savePredictedTrajectory(f_rw, state);
-
-            // measure
-            int idx = ni - start;
-            meas.at<float>(0) = vX[idx];
-            meas.at<float>(1) = vY[idx];
-            meas.at<float>(2) = vZ[idx];
-            kf.correct(meas);
-            std::cout << "ni: " << ni << " measured" << std::endl;
-            std::cout << meas << std::endl;
-
-            double qx = vqx[idx];
-            double qy = vqy[idx];
-            double qz = vqz[idx];
-            double qw = vqw[idx];
-
-            SLAM.updateTrajectory(kf.statePost.at<float>(0), kf.statePost.at<float>(1),
-                    kf.statePost.at<float>(2),
-                    qx, qy, qz, qw);
         }
         
         // Save trajectory to text file
-        SLAM.SaveTrajectory(f);
+        SLAM.SaveTrajectory(f_mono);
     }
 
     SLAM.Shutdown();
-    f.close();
+    f_mono.close();
+    f_kalman.close();
     f_rw.close();
 
     return 0;
@@ -311,3 +338,62 @@ cv::KalmanFilter createKF()
 
     return kf;
 }
+
+
+void initialiseKF(cv::KalmanFilter &kf)
+{
+    setIdentity(kf.processNoiseCov, cv::Scalar(0.05));
+    setIdentity(kf.measurementNoiseCov, cv::Scalar(0.05));
+    setIdentity(kf.errorCovPost, cv::Scalar(1));
+}
+
+void setPostValsToOptimVals(cv::KalmanFilter &kf, const cv::Mat &state)
+{
+    kf.statePost = state;
+    kf.errorCovPost = kf.transitionMatrix * kf.errorCovPost.t() * kf.transitionMatrix
+            + kf.processNoiseCov;
+}
+
+std::ofstream openFile(const std::string &filepath)
+{
+    std::ofstream f;
+    f.open(filepath.c_str());
+    f << std::fixed;
+    return f;
+}
+
+size_t loadImuQueue(std::vector<float> &vImuQueue, 
+        size_t firstImuIndex,
+        std::vector<float> &vTimeStampsImu,
+        const float &currentFrameTs, std::vector<float> &vMeasurement)
+{
+    vImuQueue.clear();
+    while(vTimeStampsImu[firstImuIndex] <= currentFrameTs)
+    {
+        vImuQueue.push_back(vMeasurement[firstImuIndex]);
+
+        // prevent out of bound indexing when reaching end of IMU input
+        if(firstImuIndex < vTimeStampsImu.size())
+            firstImuIndex++;
+        else
+            return firstImuIndex;
+    }
+
+    return firstImuIndex;
+
+}
+
+void saveTrajectory(std::ofstream &f, const float &t, const float &x, const float &y, const float &z,
+        const float &q1, const float &q2, const float &q3, const float &q4)
+{
+    f <<
+      // frame times
+      std::setprecision(6) << t << " "
+      // pose
+      <<  std::setprecision(9) << x
+                          << " " << y
+                          << " " << z << " "
+                          << q1 << " " << q2 << " " << q3 << " " << q4
+      <<std::endl;
+}
+

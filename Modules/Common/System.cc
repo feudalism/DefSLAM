@@ -600,9 +600,52 @@ namespace defSLAM
 
   std::vector<float> System::getQuaternions()
   {
+    cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw.clone();
     cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
     vector<float> q = Converter::toQuaternion(Rwc);
     
     return q;
+  }
+  
+  void System::updateCoordinates(const double &x, const double &y, const double &z)
+  {
+      std::cout << "Force updating trajectory!" << std::endl;
+      
+      // get current rotation matrix
+      cv::Mat Tcw = mpTracker->mCurrentFrame->mTcw;
+      cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+      cv::Mat Rcw = Rwc.t();
+      
+      cv::Mat twc = cv::Mat(3, 1, CV_32F);
+      twc.at<float>(0) = x;
+      twc.at<float>(1) = y;
+      twc.at<float>(2) = z;
+      cv::Mat tcw = -Rcw*twc;
+      
+      tcw.copyTo(Tcw.rowRange(0, 3).col(3));
+      mpTracker->mCurrentFrame->SetPose(Tcw);
+
+      // update velocity for motion model
+      Frame lastFrame = static_cast<DefTracking *>(mpTracker)->getLastFrame();
+        if (!lastFrame.mTcw.empty())
+        {
+          cv::Mat LastTwc = cv::Mat::eye(4, 4, CV_32F);
+          lastFrame.GetRotationInverse().copyTo(
+              LastTwc.rowRange(0, 3).colRange(0, 3));
+          lastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0, 3).col(3));
+          static_cast <DefTracking *>(mpTracker)->setVelocity(Tcw * LastTwc);
+        }
+        else
+          static_cast <DefTracking *>(mpTracker)->setVelocity(cv::Mat());
+
+      // update relative frame poses
+      cv::Mat Tcr = Tcw * mpTracker->mCurrentFrame->mpReferenceKF->GetPoseInverse();
+      mpTracker->mlRelativeFramePoses.pop_back();
+      mpTracker->mlRelativeFramePoses.push_back(Tcr);
+
+      // set to LOST
+      mpTracker->mState = Tracking::eTrackingState::LOST;
+      mpTracker->mlbLost.pop_back();
+      mpTracker->mlbLost.push_back(true);
   }
 } // namespace defSLAM
