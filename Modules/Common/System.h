@@ -137,6 +137,7 @@ namespace defSLAM
     int GetTrackingState();
     
     std::string getDataAsString();
+    std::vector<float> getQuaternions();
     void SaveTrajectory(ofstream &f);
     void savePredictedTrajectory(ofstream &f, cv::Mat pred);
     void updateTrajectory(const double &x, const double &y, const double &z, 

@@ -598,4 +598,11 @@ namespace defSLAM
       mpTracker->mlbLost.push_back(true);
   }
 
+  std::vector<float> System::getQuaternions()
+  {
+    cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+    vector<float> q = Converter::toQuaternion(Rwc);
+    
+    return q;
+  }
 } // namespace defSLAM
