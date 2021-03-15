@@ -20,6 +20,8 @@ void loadIMU(const std::string &strImuPath,
                 std::vector<float> &vTimeStampsIMU,
                 std::vector<float> &vX, std::vector<float> &vY, std::vector<float> &vZ,
                 std::vector<float> &vq1, std::vector<float> &vq2, std::vector<float> &vq3, std::vector<float> &vq4);
+                
+cv::KalmanFilter createKF();
 
 int main(int argc, char **argv)
 {
@@ -51,6 +53,9 @@ int main(int argc, char **argv)
     std::vector<float> vxmeas, vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas;
     loadIMU(strImuPath, vTimeStampsIMU,
             vxmeas,  vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas);
+
+    // kalman filter
+    cv::KalmanFilter kf = createKF();
     
     // load GT data
     std::cout << "Loading GT data... ";
@@ -291,4 +296,18 @@ void loadIMU(const std::string &strGTTrajPath, std::vector<float> &vTimeStampsIM
 
     fTraj.close();
 
+}
+
+cv::KalmanFilter createKF()
+{
+    int stateSize = 3;
+    int measSize = 3;
+    int controlSize = 3;
+    cv::KalmanFilter kf(stateSize, measSize, controlSize, CV_32F);
+
+    cv::setIdentity(kf.transitionMatrix);
+    cv::setIdentity(kf.controlMatrix);
+    cv::setIdentity(kf.measurementMatrix);
+
+    return kf;
 }
