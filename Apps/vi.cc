@@ -16,6 +16,11 @@ void readGTData(const string &strGTTrajPath, vector<double> &vTimeStampsGT,
                 vector<double> &vX, vector<double> &vY, vector<double> &vZ,
                 vector<double> &vq1, vector<double> &vq2, vector<double> &vq3, vector<double> &vq4);
 
+void loadIMU(const std::string &strImuPath,
+                std::vector<float> &vTimeStampsIMU,
+                std::vector<float> &vX, std::vector<float> &vY, std::vector<float> &vZ,
+                std::vector<float> &vq1, std::vector<float> &vq2, std::vector<float> &vq3, std::vector<float> &vq4);
+
 int main(int argc, char **argv)
 {
     // variable declarations for the arguments
@@ -39,6 +44,13 @@ int main(int argc, char **argv)
     vector<double> vTimeStampsCam;
     vector<double> vTimeStampsGT;
     vector<double> vX, vY, vZ, vqx, vqy, vqz, vqw;
+
+    // load noisy imu data
+    std::string strImuPath = "traj_mandala0_gt_imu_noisy.txt";
+    std::vector<float> vTimeStampsIMU;
+    std::vector<float> vxmeas, vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas;
+    loadIMU(strImuPath, vTimeStampsIMU,
+            vxmeas,  vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas);
     
     // load GT data
     std::cout << "Loading GT data... ";
@@ -236,4 +248,47 @@ void readGTData(const string &strGTTrajPath, vector<double> &vTimeStampsGT,
     
     fTraj.close();
     
+}
+
+void loadIMU(const std::string &strGTTrajPath, std::vector<float> &vTimeStampsIMU,
+                std::vector<float> &vxmeas, std::vector<float> &vymeas, std::vector<float> &vzmeas,
+                std::vector<float> &vqxmeas, std::vector<float> &vqymeas, std::vector<float> &vqzmeas, std::vector<float> &vqwmeas)
+{
+    std::ifstream fTraj;
+    fTraj.open(strGTTrajPath.c_str());
+
+    while(!fTraj.eof())
+    {
+        std::string s;
+        getline(fTraj,s);
+
+        if(!s.empty())
+        {
+            std::string item;
+            size_t pos = 0;
+            double data[8];
+            int count = 0;
+
+            while ((pos = s.find(' ')) != std::string::npos) {
+                item = s.substr(0, pos);
+                data[count++] = stod(item);
+                s.erase(0, pos + 1);
+            }
+            item = s.substr(0, pos);
+            data[7] = stod(item);
+
+            vTimeStampsIMU.push_back(data[0]);
+            vxmeas.push_back(data[1]);
+            vymeas.push_back(data[2]);
+            vzmeas.push_back(data[3]);
+            vqxmeas.push_back(data[4]);
+            vqymeas.push_back(data[5]);
+            vqzmeas.push_back(data[6]);
+            vqwmeas.push_back(data[7]);
+        }
+
+    }
+
+    fTraj.close();
+
 }
