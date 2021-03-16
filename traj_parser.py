@@ -2,9 +2,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import rowan # (w, x, y, z)
 
 def parse(filepath, data_labels):
     data_containers = {}
+    num_labels = len(data_labels)
+    
     for label in data_labels:
         data_containers[label] = []
 
@@ -12,15 +15,18 @@ def parse(filepath, data_labels):
         for i, line in enumerate(f):
             data = line.split()
             ts = float(data[0])
-
-            data_containers['ts'].append(ts)
-            data_containers['x'].append(float(data[1]))
-            data_containers['y'].append(float(data[2]))
-            data_containers['z'].append(float(data[3]))
-            data_containers['q1'].append(float(data[4]))
-            data_containers['q2'].append(float(data[5]))
-            data_containers['q3'].append(float(data[6]))
-            data_containers['q4'].append(float(data[7].rstrip()))
+            
+            for j, label in enumerate(data_labels):
+                if label == 'ts':
+                    data_containers['ts'].append(ts)
+                    continue
+                
+                if j == (num_labels - 1):
+                    meas = float(data[j].rstrip())
+                else:
+                    meas = float(data[j])
+                    
+                data_containers[label].append(meas)
 
     # Convert list to numpy array
     for label in data_labels:
@@ -134,4 +140,38 @@ def add_noise(filepath):
     
     return filename_noisy
 
+def generate_raw_imu_data(filepath, data_labels):
+    filename, ext = os.path.splitext(filepath)
+    filename_imuraw = filename + '_imuraw' + ext
+    
+    data_containers = parse(filepath, data_labels)
+    
+    raw_data_containers = {}
+    raw_data_labels = ['ts', 'ax', 'ay', 'az', 'gx', 'gy', 'gz']
+    
+    t = data_containers['ts']
+    raw_data_containers['ts'] = t
+    dt = t[1] - t[0]
+        
+    raw_data_containers['ax'] = get_acceleration(data_containers['x'], dt)
+    raw_data_containers['ay'] = get_acceleration(data_containers['y'], dt)
+    raw_data_containers['az'] = get_acceleration(data_containers['z'], dt)
+    
+    for i, _ in enumerate(t):
+        x = data_containers['qx'][i]
+        y = data_containers['qy'][i]
+        z = data_containers['qz'][i]
+        w = data_containers['qw'][i]
+        
+        quat = np.array([w, x, y, z])
+        quat = rowan.normalize(quat)
+            
+        
+def get_acceleration(position, dt):
+    vx = np.gradient(position, dt)
+    return np.gradient(vx, dt)
+        
 
+FILEPATH = "./Apps/traj_mandala0_gt.txt"
+data_labels = ['ts', 'x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
+generate_raw_imu_data(FILEPATH, data_labels)

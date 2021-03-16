@@ -8,7 +8,7 @@ traj_data = {
             'kalman' : "./Apps/trajectory_offline.txt",
             'mono' : "./Apps/traj_mandala0_mono.txt",
             }
-data_labels = ['ts', 'x', 'y', 'z', 'q1', 'q2', 'q3', 'q4']
+data_labels = ['ts', 'x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
     
 axes = None
 for label, filepath in traj_data.items():
