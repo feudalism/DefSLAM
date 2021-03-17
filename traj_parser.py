@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import rowan # (w, x, y, z)
+import quaternion
+from quaternion.numba_wrapper import xrange
 
 def parse(filepath, data_labels):
     data_containers = {}
@@ -157,19 +159,120 @@ def generate_raw_imu_data(filepath, data_labels):
     raw_data_containers['ay'] = get_acceleration(data_containers['y'], dt)
     raw_data_containers['az'] = get_acceleration(data_containers['z'], dt)
     
+    quat_array = np.zeros((len(t),), dtype=np.quaternion)
+    qinv_array = np.zeros((len(t),), dtype=np.quaternion)
     for i, _ in enumerate(t):
         x = data_containers['qx'][i]
         y = data_containers['qy'][i]
         z = data_containers['qz'][i]
         w = data_containers['qw'][i]
         
-        quat = np.array([w, x, y, z])
-        quat = rowan.normalize(quat)
-            
-        
+        quat = np.quaternion(w, x, y, z)
+        qinv = quaternion.quaternion.inverse(quat)
+        quat_array[i] = quat
+        qinv_array[i] = qinv
+    
+    print(qinv_array)
+    qd_array = quat_derivative(quat_array, t)
+    qdd_array = quat_derivative(qd_array, t)
+    
+    # https://math.stackexchange.com/questions/1792826/estimate-angular-velocity-and-acceleration-from-a-sequence-of-rotations
+    w = 2 * qd_array * qinv_array
+    print(w)
+    
 def get_acceleration(position, dt):
     vx = np.gradient(position, dt)
     return np.gradient(vx, dt)
+    
+def quat_derivative(f, t):
+    # copied from quaternion source code: calculus.py
+    
+    dfdt = np.empty_like(f)
+    
+    for i in xrange(2):
+        t_i = t[i]
+        t1 = t[0]
+        t2 = t[1]
+        t3 = t[2]
+        t4 = t[3]
+        t5 = t[4]
+        h1 = t1 - t_i
+        h2 = t2 - t_i
+        h3 = t3 - t_i
+        h4 = t4 - t_i
+        h5 = t5 - t_i
+        h12 = t1 - t2
+        h13 = t1 - t3
+        h14 = t1 - t4
+        h15 = t1 - t5
+        h23 = t2 - t3
+        h24 = t2 - t4
+        h25 = t2 - t5
+        h34 = t3 - t4
+        h35 = t3 - t5
+        h45 = t4 - t5
+        dfdt[i] = (-((h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) / (h12 * h13 * h14 * h15)) * f[0]
+                   + ((h1 * h3 * h4 + h1 * h3 * h5 + h1 * h4 * h5 + h3 * h4 * h5) / (h12 * h23 * h24 * h25)) * f[1]
+                   - ((h1 * h2 * h4 + h1 * h2 * h5 + h1 * h4 * h5 + h2 * h4 * h5) / (h13 * h23 * h34 * h35)) * f[2]
+                   + ((h1 * h2 * h3 + h1 * h2 * h5 + h1 * h3 * h5 + h2 * h3 * h5) / (h14 * h24 * h34 * h45)) * f[3]
+                   - ((h1 * h2 * h3 + h1 * h2 * h4 + h1 * h3 * h4 + h2 * h3 * h4) / (h15 * h25 * h35 * h45)) * f[4])
+
+    for i in xrange(2, len(t) - 2):
+        t1 = t[i - 2]
+        t2 = t[i - 1]
+        t3 = t[i]
+        t4 = t[i + 1]
+        t5 = t[i + 2]
+        h1 = t1 - t3
+        h2 = t2 - t3
+        h4 = t4 - t3
+        h5 = t5 - t3
+        h12 = t1 - t2
+        h13 = t1 - t3
+        h14 = t1 - t4
+        h15 = t1 - t5
+        h23 = t2 - t3
+        h24 = t2 - t4
+        h25 = t2 - t5
+        h34 = t3 - t4
+        h35 = t3 - t5
+        h45 = t4 - t5
+        dfdt[i] = (-((h2 * h4 * h5) / (h12 * h13 * h14 * h15)) * f[i - 2]
+                   + ((h1 * h4 * h5) / (h12 * h23 * h24 * h25)) * f[i - 1]
+                   - ((h1 * h2 * h4 + h1 * h2 * h5 + h1 * h4 * h5 + h2 * h4 * h5) / (h13 * h23 * h34 * h35)) * f[i]
+                   + ((h1 * h2 * h5) / (h14 * h24 * h34 * h45)) * f[i + 1]
+                   - ((h1 * h2 * h4) / (h15 * h25 * h35 * h45)) * f[i + 2])
+
+    for i in xrange(len(t) - 2, len(t)):
+        t_i = t[i]
+        t1 = t[-5]
+        t2 = t[-4]
+        t3 = t[-3]
+        t4 = t[-2]
+        t5 = t[-1]
+        h1 = t1 - t_i
+        h2 = t2 - t_i
+        h3 = t3 - t_i
+        h4 = t4 - t_i
+        h5 = t5 - t_i
+        h12 = t1 - t2
+        h13 = t1 - t3
+        h14 = t1 - t4
+        h15 = t1 - t5
+        h23 = t2 - t3
+        h24 = t2 - t4
+        h25 = t2 - t5
+        h34 = t3 - t4
+        h35 = t3 - t5
+        h45 = t4 - t5
+        dfdt[i] = (-((h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) / (h12 * h13 * h14 * h15)) * f[-5]
+                   + ((h1 * h3 * h4 + h1 * h3 * h5 + h1 * h4 * h5 + h3 * h4 * h5) / (h12 * h23 * h24 * h25)) * f[-4]
+                   - ((h1 * h2 * h4 + h1 * h2 * h5 + h1 * h4 * h5 + h2 * h4 * h5) / (h13 * h23 * h34 * h35)) * f[-3]
+                   + ((h1 * h2 * h3 + h1 * h2 * h5 + h1 * h3 * h5 + h2 * h3 * h5) / (h14 * h24 * h34 * h45)) * f[-2]
+                   - ((h1 * h2 * h3 + h1 * h2 * h4 + h1 * h3 * h4 + h2 * h3 * h4) / (h15 * h25 * h35 * h45)) * f[-1])
+
+    return dfdt
+
         
 
 FILEPATH = "./Apps/traj_mandala0_gt.txt"
