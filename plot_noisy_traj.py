@@ -14,7 +14,7 @@ data_labels = ['ts', 'x', 'y', 'z', 'qx', 'qy', 'qz', 'qw']
 raw_data_labels = ['ts', 'ax', 'ay', 'az', 'gx', 'gy', 'gz']
 
 filename_imu = generate_raw_imu_data(traj_data['stereoGT'], data_labels,
-                num_imu_between_frames = 10)
+                num_imu_between_frames = 100)
 add_noise(filename_imu)
     
 axes = None
