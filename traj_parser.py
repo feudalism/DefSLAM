@@ -146,9 +146,9 @@ def generate_raw_imu_data(filepath, data_labels, num_imu_between_frames=2):
     raw_data_containers['az'] = get_acceleration(data_containers['z'], dt)
     
     rx, ry, rz = get_euler_angles_from_quats(data_containers)
-    raw_data_containers['gx'] = get_acceleration(rx, dt)
-    raw_data_containers['gy'] = get_acceleration(ry, dt)
-    raw_data_containers['gz'] = get_acceleration(rz, dt)
+    raw_data_containers['gx'] = np.gradient(rx, dt)
+    raw_data_containers['gy'] = np.gradient(ry, dt)
+    raw_data_containers['gz'] = np.gradient(rz, dt)
     
     interp_data_containers = imu_interpolate(raw_data_containers, num_imu_between_frames)
 
