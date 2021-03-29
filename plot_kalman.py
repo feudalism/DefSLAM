@@ -3,7 +3,7 @@ from traj_parser import parse, plot
 
 traj_data = {
             'stereoGT': "./Apps/traj_mandala0_gt.txt",
-            'measurements': "./Apps/traj_mandala0_gt_imu_noisy.txt",
+            # 'measurements': "./Apps/traj_mandala0_gt_imu_noisy.txt",
             'rw': "./Apps/trajectory_offline_rw.txt",
             'kalman' : "./Apps/trajectory_offline.txt",
             'mono' : "./Apps/traj_mandala0_mono.txt",

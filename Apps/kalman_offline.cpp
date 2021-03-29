@@ -8,11 +8,11 @@
 #include <random>
 
 void loadTrajectory(const std::string &strGTTrajPath,
-                std::vector<float> &vTimeStampsIMU,
+                std::vector<float> &vTimeStampsImu,
                 std::vector<float> &vX, std::vector<float> &vY, std::vector<float> &vZ,
                 std::vector<float> &vq1, std::vector<float> &vq2, std::vector<float> &vq3, std::vector<float> &vq4);
 void loadImuRaw(const std::string &sstrImuRawTrajPath,
-                std::vector<float> &vTimeStampsImuRaw,
+                std::vector<float> &vTimeStampsImu,
                 std::vector<float> &vaxmeas,
                 std::vector<float> &vaymeas,
                 std::vector<float> &vazmeas,
@@ -28,45 +28,41 @@ size_t loadImuQueue(std::vector<float> &vImuQueue,
         std::vector<float> &vTimeStampsImu,
         const float &currentFrameTs, std::vector<float> &vMeasurement);
 
-cv::KalmanFilter createKF();
-void initialiseKF(cv::KalmanFilter &kf);
+cv::KalmanFilter createKF(const int &stateSize, const int &measSize,
+        const int &controlSize);
 void setPostValsToOptimVals(cv::KalmanFilter &kf, const cv::Mat &state);
 
 std::ofstream openFile(const std::string &filepath);
 
 int main(int argc, char **argv)
 {
-    // load monocular path
+    // load monocular trajectory (simulates monocular DefSLAM)
     std::string strMonoTrajPath = "traj_mandala0_mono.txt";
     std::vector<float> vTimeStampsMono;
     std::vector<float> vxmono, vymono, vzmono, vqxmono, vqymono, vqzmono, vqwmono;
     loadTrajectory(strMonoTrajPath, vTimeStampsMono,
             vxmono,  vymono, vzmono, vqxmono, vqymono, vqzmono, vqwmono);
 
-    // load noisy imu data
-    std::string strGTTrajPath = "traj_mandala0_gt_imu_noisy.txt";
-    std::vector<float> vTimeStampsIMU;
-    std::vector<float> vxmeas, vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas;
-    loadTrajectory(strGTTrajPath, vTimeStampsIMU,
-            vxmeas,  vymeas, vzmeas, vqxmeas, vqymeas, vqzmeas, vqwmeas);
-
-    // load noisy imu data
+    // load noisy raw imu data (generated from stereo DefSLAM trajectory)
     std::string strImuRawTrajPath = "traj_mandala0_gt_imuraw_noisy.txt";
-    std::vector<float> vTimeStampsImuRaw;
+    std::vector<float> vTimeStampsImu;
     std::vector<float> vaxmeas, vaymeas, vazmeas, vgxmeas, vgymeas, vgzmeas;
-    loadImuRaw(strImuRawTrajPath, vTimeStampsImuRaw,
+    loadImuRaw(strImuRawTrajPath, vTimeStampsImu,
             vaxmeas, vaymeas, vazmeas, vgxmeas, vgymeas, vgzmeas);
 
-    // kalman filter
-    cv::KalmanFilter kf = createKF();
+    // create kalman filter with identity matrices
+    const int stateSize = 13;
+    const int measSize = 13;
+    const int controlSize = 13;
+    cv::KalmanFilter kf = createKF(stateSize, measSize, controlSize);
 
-    // random walk
+    // generator for random walk
     const double mean = 0.0;
     const double stddev = 0.005;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(mean, stddev);
 
-    // file for saving trajectory
+    // files for saving trajectory
     std::ofstream f = openFile("./trajectory_offline.txt");
     std::ofstream f_rw = openFile("./trajectory_offline_rw.txt");
 
@@ -76,23 +72,22 @@ int main(int argc, char **argv)
     size_t kalman_start = 220;
     size_t kalman_end = 310;
 
-    size_t stateSize = 6;
-    size_t measSize = 6;
-    size_t controlSize = 6;
-
+    // filter variables
     cv::Mat state(stateSize, 1, CV_32F);
     cv::Mat statePost(stateSize, 1, CV_32F);
     cv::Mat processNoise(stateSize, 1, CV_32F);
     cv::Mat control(controlSize, 1, CV_32F);
-
     cv::Mat meas(measSize, 1, CV_32F);
     cv::Mat rw(stateSize, 1, CV_32F);
 
-    std::vector<float> vImuXQueue, vImuYQueue, vImuZQueue;
+    // imu queue (stores imu data up till next frame)
+    std::vector<float> vImuAxQueue, vImuAyQueue, vImuAzQueue,
+            vImuGxQueue, vImuGyQueue, vImuGzQueue;
+            
     // find index of first IMU data that appears after or during the first frame
     int firstImuIndex = 0;
     int imuQueueStartIndex = 0;
-    while(vTimeStampsIMU[firstImuIndex] <= vTimeStampsMono[0])
+    while(vTimeStampsImu[firstImuIndex] <= vTimeStampsMono[0])
       firstImuIndex++;
     firstImuIndex--;
 
@@ -102,42 +97,56 @@ int main(int argc, char **argv)
         const int idx = ni - start;
         const float currentFrameTs = vTimeStampsMono[idx];
 
-        // monocular pose from optimisation
         state.at<float>(0) = vxmono[idx];
         state.at<float>(1) = vymono[idx];
         state.at<float>(2) = vzmono[idx];
+        state.at<float>(3) = vqxmono[idx];
+        state.at<float>(4) = vqymono[idx];
+        state.at<float>(5) = vqzmono[idx];
+        state.at<float>(6) = vqwmono[idx];
+        
         meas.at<float>(0) = vxmono[idx];
         meas.at<float>(1) = vymono[idx];
         meas.at<float>(2) = vzmono[idx];
-        float qx = vqxmono[idx];
-        float qy = vqymono[idx];
-        float qz = vqzmono[idx];
-        float qw = vqwmono[idx];
-
-        if(ni == (kalman_start - 1))
-            initialiseKF(kf);
-
-        setPostValsToOptimVals(kf, state);
+        meas.at<float>(3) = vqxmono[idx];
+        meas.at<float>(4) = vqymono[idx];
+        meas.at<float>(5) = vqzmono[idx];
+        meas.at<float>(6) = vqwmono[idx];
 
         // load IMU measurements from prev fraem to current
         if(idx > 0)
         {
             imuQueueStartIndex = firstImuIndex;
-            loadImuQueue(vImuXQueue, firstImuIndex,
-                vTimeStampsIMU, currentFrameTs, vxmeas);
-            loadImuQueue(vImuYQueue, firstImuIndex,
-                vTimeStampsIMU, currentFrameTs, vymeas);
-            firstImuIndex = loadImuQueue(vImuZQueue, firstImuIndex,
-                vTimeStampsIMU, currentFrameTs, vzmeas);
+            loadImuQueue(vImuAxQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vaxmeas);
+            loadImuQueue(vImuAyQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vaymeas);
+            loadImuQueue(vImuAzQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vazmeas);
+            loadImuQueue(vImuGxQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vgxmeas);
+            loadImuQueue(vImuGyQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vgymeas);
+            firstImuIndex = loadImuQueue(vImuGzQueue, firstImuIndex,
+                vTimeStampsImu, currentFrameTs, vgzmeas);
+        }
+        
+        // set initial values of kf
+        // set initial filter state to monocular pose from optimisation
+        if(ni == kalman_start - 1)
+        {
+            kf.statePost = state.clone();
+            kf.errorCovPost = kf.transitionMatrix * kf.errorCovPost.t() * kf.transitionMatrix
+                    + kf.processNoiseCov;
         }
 
-        // kalman implementation
+        // start the filter
         if((ni >= kalman_start) && (ni < kalman_end))
         {
             // imu queue from prev frame up till current
-            for(size_t iimu=0; iimu<vImuXQueue.size(); iimu++)
+            for(size_t iimu=0; iimu<vImuAxQueue.size(); iimu++)
             {
-                const float currentImuTs = vTimeStampsIMU[imuQueueStartIndex + iimu];
+                const float currentImuTs = vTimeStampsImu[imuQueueStartIndex + iimu];
 
                 // predict next position from random walk model
                 cv::randn(control, mean, stddev);
@@ -145,17 +154,23 @@ int main(int argc, char **argv)
 
                 saveTrajectory(f_rw, currentImuTs,
                     state.at<float>(0), state.at<float>(1), state.at<float>(2),
-                    qx, qy, qz, qw);
+                    state.at<float>(3), state.at<float>(4),
+                    state.at<float>(5), state.at<float>(6));
 
                 // correct prediction using measurements
-                meas.at<float>(3) = vgxmeas[imuQueueStartIndex + iimu];
-                meas.at<float>(4) = vgymeas[imuQueueStartIndex + iimu];
-                meas.at<float>(5) = vgzmeas[imuQueueStartIndex + iimu];
+                meas.at<float>(7) = vaxmeas[imuQueueStartIndex + iimu];
+                meas.at<float>(8) = vaymeas[imuQueueStartIndex + iimu];
+                meas.at<float>(9) = vazmeas[imuQueueStartIndex + iimu];
+                kf.correct(meas);
+                meas.at<float>(10) = vgxmeas[imuQueueStartIndex + iimu];
+                meas.at<float>(11) = vgymeas[imuQueueStartIndex + iimu];
+                meas.at<float>(12) = vgzmeas[imuQueueStartIndex + iimu];
                 kf.correct(meas);
 
                 saveTrajectory(f, currentImuTs,
                     state.at<float>(0), state.at<float>(1), state.at<float>(2),
-                    qx, qy, qz, qw);
+                    state.at<float>(3), state.at<float>(4),
+                    state.at<float>(5), state.at<float>(6));
             }
         }
     }
@@ -164,7 +179,7 @@ int main(int argc, char **argv)
     f_rw.close();
 }
 
-void loadTrajectory(const std::string &strGTTrajPath, std::vector<float> &vTimeStampsIMU,
+void loadTrajectory(const std::string &strGTTrajPath, std::vector<float> &vTimeStampsImu,
                 std::vector<float> &vxmeas, std::vector<float> &vymeas, std::vector<float> &vzmeas,
                 std::vector<float> &vqxmeas, std::vector<float> &vqymeas, std::vector<float> &vqzmeas, std::vector<float> &vqwmeas)
 {
@@ -191,7 +206,7 @@ void loadTrajectory(const std::string &strGTTrajPath, std::vector<float> &vTimeS
             item = s.substr(0, pos);
             data[7] = stod(item);
 
-            vTimeStampsIMU.push_back(data[0]);
+            vTimeStampsImu.push_back(data[0]);
             vxmeas.push_back(data[1]);
             vymeas.push_back(data[2]);
             vzmeas.push_back(data[3]);
@@ -208,7 +223,7 @@ void loadTrajectory(const std::string &strGTTrajPath, std::vector<float> &vTimeS
 }
 
 void loadImuRaw(const std::string &sstrImuRawTrajPath,
-                std::vector<float> &vTimeStampsImuRaw,
+                std::vector<float> &vTimeStampsImu,
                 std::vector<float> &vaxmeas,
                 std::vector<float> &vaymeas,
                 std::vector<float> &vazmeas,
@@ -239,7 +254,7 @@ void loadImuRaw(const std::string &sstrImuRawTrajPath,
             item = s.substr(0, pos);
             data[7] = stod(item);
 
-            vTimeStampsImuRaw.push_back(data[0]);
+            vTimeStampsImu.push_back(data[0]);
             vaxmeas.push_back(data[1]);
             vaymeas.push_back(data[2]);
             vazmeas.push_back(data[3]);
@@ -269,25 +284,20 @@ void saveTrajectory(std::ofstream &f, const float &t, const float &x, const floa
       <<std::endl;
 }
 
-cv::KalmanFilter createKF()
+cv::KalmanFilter createKF(const int &stateSize, const int &measSize,
+        const int &controlSize)
 {
-    int stateSize = 6;
-    int measSize = 6;
-    int controlSize = 6;
     cv::KalmanFilter kf(stateSize, measSize, controlSize, CV_32F);
 
     cv::setIdentity(kf.transitionMatrix);
     cv::setIdentity(kf.controlMatrix);
     cv::setIdentity(kf.measurementMatrix);
-
-    return kf;
-}
-
-void initialiseKF(cv::KalmanFilter &kf)
-{
+    
     setIdentity(kf.processNoiseCov, cv::Scalar(0.05));
     setIdentity(kf.measurementNoiseCov, cv::Scalar(0.05));
     setIdentity(kf.errorCovPost, cv::Scalar(1));
+
+    return kf;
 }
 
 void setPostValsToOptimVals(cv::KalmanFilter &kf, const cv::Mat &state)
