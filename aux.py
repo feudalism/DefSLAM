@@ -1,13 +1,15 @@
 import numpy as np
 from math import factorial
 
+from Trajectory import parse, VisualTraj, ImuTraj
+
 def skew(x):
     return np.array([[0,    -x[2], x[1]],
                      [x[2],    0, -x[0]],
                      [-x[1], x[0],    0]])
                      
 def Fd(num_states, dt, rot, acc, om):
-    Fd = np.eye(num_states, num_states, dtype=np.float32)
+    Fd = np.eye(num_states, num_states)
     
     delt2 = dt**2/2
     delt3 = dt**3/factorial(3)
@@ -40,7 +42,7 @@ def Fd(num_states, dt, rot, acc, om):
     return Fd
 
 def Gc(num_states, num_control, rot):
-    Gd = np.zeros((num_states, num_control), dtype=np.float32)
+    Gd = np.zeros((num_states, num_control))
     Gd[3:6, 0:3] = -rot.T
     Gd[6:9, 6:9] = -np.eye(3, 3)
     Gd[9:12, -3:] = np.eye(3, 3)
@@ -49,3 +51,14 @@ def Gc(num_states, num_control, rot):
 
 def Hp(rot, scale):
     rot.T * scale
+    
+def load_data():
+    # load images (this simulates a monocular defslam run)
+    defslam_traj = "./Apps/traj_mandala0_mono.txt"
+    DefSLAM = VisualTraj(defslam_traj)
+
+    # load imu (generated from stereo defslam trajectory)
+    imu_raw = "./Apps/traj_mandala0_gt_imuraw_noisy.txt"
+    Imu = ImuTraj(imu_raw)
+    
+    return DefSLAM, Imu

@@ -7,36 +7,6 @@ from quaternion.numba_wrapper import xrange
 
 import matplotlib.pyplot as plt
 
-def parse(filepath, data_labels):
-    data_containers = {}
-    num_labels = len(data_labels)
-    
-    for label in data_labels:
-        data_containers[label] = []
-
-    with open(filepath, 'r') as f:
-        for i, line in enumerate(f):
-            data = line.split()
-            ts = float(data[0])
-            
-            for j, label in enumerate(data_labels):
-                if label == 'ts':
-                    data_containers['ts'].append(ts)
-                    continue
-                
-                if j == (num_labels - 1):
-                    meas = float(data[j].rstrip())
-                else:
-                    meas = float(data[j])
-                    
-                data_containers[label].append(meas)
-
-    # Convert list to numpy array
-    for label in data_labels:
-        data_containers[label] = np.asarray(data_containers[label])
-
-    return data_containers
-
 def plot(t, data, data_labels, file_label, min_t, max_t, offset=0, axes=None):
     if axes is None:
         fig, axes = plt.subplots(4, 2)
