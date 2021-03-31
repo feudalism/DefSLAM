@@ -1,0 +1,30 @@
+// load imu data, load slam data
+
+// set initial states (p, v, q, bom, ba, scale, pci, qci)
+// set stdevs (om, a, bom, ba), dt, g
+// set initial covariance matrix
+// update keyframe [pose]
+        calc new keyframe pose
+        pwv = -Rot_ci(pci + Rot_iw(piw))
+        qwv
+        
+        update new P matrix using new jacobians
+        
+// set initial kf pose (pkfv, qkfv)
+
+
+// for all visual_traj
+    // read pcv, qcv, newKF, slamTime
+    // qckf := qcv.conj * qkfv.conj
+    
+    // propagate: for all imu traj before next image
+        // read om_meas, a_meas, imuTime
+        
+        // Rwv from filter.qwv, Riw from q, Rci from qci
+        
+        // propagateState(om_meas, a_meas)
+        // propagateCov(om_meas, a_meas)
+
+// filter.UpdateCamera
+        
+        

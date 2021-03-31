@@ -1,4 +1,5 @@
 import numpy as np
+import quaternion
 
 class Measurement(object):
     def __init__(self, t, v1, v2):
@@ -34,3 +35,21 @@ class ImuMeasurement(Measurement):
         self.gx = om[0]
         self.gy = om[1]
         self.gz = om[2]
+        
+    def at_index(self, index):
+        if self.t.ndim == 0:
+            return self
+    
+        t = self.t[index]
+        
+        ax = self.ax[index]
+        ay = self.ay[index]
+        az = self.az[index]        
+        acc = np.array([ax, ay, az])
+        
+        gx = self.gx[index]
+        gy = self.gy[index]
+        gz = self.gz[index]
+        om = np.array([gx, gy, gz])
+        
+        return ImuMeasurement(t, acc, om)

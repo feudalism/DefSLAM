@@ -5,6 +5,8 @@ from scipy.interpolate import interp1d
 import quaternion
 from quaternion.numba_wrapper import xrange
 
+from Trajectory import parse
+
 import matplotlib.pyplot as plt
 
 def plot(t, data, data_labels, file_label, min_t, max_t, offset=0, axes=None):
@@ -98,7 +100,7 @@ def add_noise(filepath):
     
     return filename_noisy
 
-def generate_raw_imu_data(filepath, data_labels, num_imu_between_frames=2):
+def generate_raw_imu_data(filepath, data_labels, num_imu_between_frames=100):
     filename, ext = os.path.splitext(filepath)
     filename_imuraw = filename + '_imuraw' + ext
     

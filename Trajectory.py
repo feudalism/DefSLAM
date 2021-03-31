@@ -1,5 +1,6 @@
 import numpy as np
 from Measurement import VisualMeasurement, ImuMeasurement
+import matplotlib.pyplot as plt
 
 def parse(filepath, data_labels):
     data_containers = {}
@@ -32,9 +33,60 @@ def parse(filepath, data_labels):
     return data_containers
 
 class Trajectory(object):
-    def __init__(self):
+    def __init__(self, name):
+        self.t = []
+        self.x = []
+        self.y = []
+        self.z = []
+        self.qx = []
+        self.qy = []
+        self.qz = []
+        self.qw = []
+        self.name = name
         
+    def append_data(self, t, data):
+        self.t.append(t)
+        
+        self.x.append(data[0])
+        self.y.append(data[1])
+        self.z.append(data[2])
+        
+        self.qx.append(data[3])
+        self.qy.append(data[4])
+        self.qz.append(data[5])
+        self.qw.append(data[6])
+        
+    def plot(self, axes=None):
+        if axes is None:
+            fig, axes = plt.subplots(4, 2)
+            fig.tight_layout()
+            
+        labels = ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']
+        
+        for i, label in enumerate(labels):
+            ai = i + 1
 
+            if ai <= 3:
+                row = ai
+                col = 0
+            else:
+                row = ai - 4
+                col = 1
+            
+            exec(f"{label} = axes[{row}][{col}].plot(self.t, self.{label}, label=self.name)")
+
+            if len(label) == 1:
+                latex_label = '$' + label + '$'
+            else:
+                latex_label = '$' + label[0] + '_' + label[1] + '$'
+            axes[row][col].set_title(latex_label)
+            axes[row][col].grid(True)
+        
+        # legend on last plot
+        axes[row][col].legend()
+
+        return axes
+        
 class VisualTraj(object):
     def __init__(self, filepath):
         self.filepath = filepath
@@ -66,7 +118,7 @@ class VisualTraj(object):
         rot = np.array([qx, qy, qz, qw])
         
         return VisualMeasurement(t, pos, rot)
-        
+
 class ImuTraj(object):
     def __init__(self, filepath):
         self.filepath = filepath
@@ -82,11 +134,35 @@ class ImuTraj(object):
         self.gy = data['gy']
         self.gz = data['gz']
         
-    def get_first_index(self, cam_index):
-        first_index = 0
-        while self.ts[first_index] <= cam_index:
-            first_index += 1
-        return first_index - 1
+        self.next_frame_index = 0
+        self.queue_first_ts = 0
+        
+    def get_next_frame_index(self, cam_t):
+        return max([i for i, t in enumerate(self.ts) if t <= cam_t])
+        
+    def get_imu_queue(self, cam_t):
+        start_index = self.next_frame_index
+        next_index = self.get_next_frame_index(cam_t)
+        
+        if start_index == next_index:
+            queue = self.at_index(start_index)
+        else:
+            t = self.ts[start_index:next_index+1]
+        
+            ax = self.ax[start_index:next_index+1]
+            ay = self.ay[start_index:next_index+1]
+            az = self.az[start_index:next_index+1]
+            acc = np.vstack((ax, ay, az))
+            
+            gx = self.gx[start_index:next_index+1]
+            gy = self.gy[start_index:next_index+1]
+            gz = self.gz[start_index:next_index+1]
+            om = np.vstack((gx, gy, gz))
+            
+            queue = ImuMeasurement(t, acc, om)
+            
+        self.next_frame_index = next_index + 1
+        return queue
         
     def at_index(self, index):
         t = self.ts[index]

@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
-from traj_parser import parse, plot, add_noise, generate_raw_imu_data
+from traj_parser import plot, add_noise, generate_raw_imu_data
+
+from Trajectory import parse
 
 traj_data = {
             'stereoGT': "./Apps/traj_mandala0_gt.txt",
