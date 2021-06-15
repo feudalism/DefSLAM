@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     {
 		// open the default camera using the default API, for video capturing
         std::cout << "Opening the default camera..." << std::endl;
-        cap.open(0);
+        cap.open(4);
     }
     else
     {
