@@ -1,33 +1,39 @@
 ### Args for DefSLAM ###
-orb_voc=/home/user3/slam/DefSLAM/Vocabulary/ORBvoc.txt
+orb_voc=~/git/DefSLAM/Vocabulary/ORBvoc.txt
 
 ## Datasets
 # # Hamlyn
-# yaml=/home/user3/slam/datasets/defslam-f5phantom/hamlyn.yaml
-# vid=/home/user3/slam/datasets/defslam-f5phantom/f5_dynamic_deint_L.avi
+# yaml=~/datasets/f5phantom/hamlyn.yaml
+# vid=~/datasets/f5phantom/f5_dynamic_deint_L.avi
 
 # # Mandala
-yaml=/home/user3/slam/datasets/mandala0/stereo0_2.yaml
-imgs=/home/user3/slam/datasets/mandala0/images
-ts="/home/user3/slam/datasets/mandala0/timestamps/timestamps_copy.txt"
+# yaml=~/datasets/mandala0/stereo0_2.yaml
+# imgs=~/datasets/mandala0/images
+# ts=~/datasets/mandala0/timestamps/timestamps_copy.txt
 
+# # GRK
+yaml=~/datasets/grk/endo.yaml
+vid=~/datasets/grk/bubblewrap.webm
 
 ### Run DefSLAM ###
 # Process a sequence
 # Usage: ./DefSLAM ORBvocabulary calibrationFile video
 echo Starting DefSLAM...
-echo $orb_voc $yaml $imgs $ts
+echo $orb_voc $yaml $vid
+# echo $orb_voc $yaml $imgs $ts
 echo
 
 ## Run type
 # # Debug
-# gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $imgs $ts
+gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml
+#gdb --command=./debug.sh --args ./DefSLAM $orb_voc $yaml $vid
 # gdb --command=./debug.sh --args ./DefSLAMVI $orb_voc $yaml $imgs $ts
 # gdb --command=./debug.sh --args ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Normal run
-# ./DefSLAM $orb_voc $yaml $imgs $ts
-./DefSLAMVI $orb_voc $yaml $imgs $ts
+# ./DefSLAM $orb_voc $yaml
+# ./DefSLAM $orb_voc $yaml $vid
+# ./DefSLAMVI $orb_voc $yaml $imgs $ts
 # ./DefSLAMGT $orb_voc $yaml $imgs $imgs $ts
 
 # # Valgrind
