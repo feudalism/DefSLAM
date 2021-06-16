@@ -6,7 +6,6 @@ int main(int argc, char **argv)
     // variable declarations for the arguments
     string orbVocab = argv[1];  
     string calibFile = argv[2];    
-    string videoFile = argv[3];
     
 	// prints the number of arguments
     std::cout << argc << std::endl;
@@ -34,6 +33,7 @@ int main(int argc, char **argv)
     else
     {
         // video file / capturing device / video stream
+        string videoFile = argv[3];
         std::cout << "Opening video file: " << videoFile << std::endl;
         cap.open(videoFile);
     }
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads (local mapping, loop closing, viewer)
     // and gets ready to process frames.
     // args: ORB vocab, calibration file, use viewer
-    defSLAM::System SLAM(orbVocab, calibFile, false);
+    defSLAM::System SLAM(orbVocab, calibFile, true);
 
     uint i(0);
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
